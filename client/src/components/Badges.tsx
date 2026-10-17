@@ -2,57 +2,111 @@ import React from 'react';
 import { WorkItemPriority, WorkItemStatus, WorkItemType } from '../types';
 
 export const PriorityBadge: React.FC<{ priority: WorkItemPriority }> = ({ priority }) => {
-  const styles: Record<WorkItemPriority, string> = {
-    URGENT: 'bg-red-500/20 text-red-300 border-red-500/30 animate-pulse',
-    HIGH: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-    MEDIUM: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-    LOW: 'bg-slate-700/50 text-slate-300 border-slate-600',
+  const config: Record<WorkItemPriority, { bg: string; text: string; border: string; dot: string; pulse?: boolean }> = {
+    URGENT: {
+      bg: 'bg-rose-50',
+      text: 'text-rose-700',
+      border: 'border-rose-200/90',
+      dot: 'bg-rose-500',
+      pulse: true,
+    },
+    HIGH: {
+      bg: 'bg-orange-50',
+      text: 'text-orange-700',
+      border: 'border-orange-200/90',
+      dot: 'bg-orange-500',
+    },
+    MEDIUM: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-700',
+      border: 'border-amber-200/90',
+      dot: 'bg-amber-500',
+    },
+    LOW: {
+      bg: 'bg-slate-100',
+      text: 'text-slate-600',
+      border: 'border-slate-200',
+      dot: 'bg-slate-400',
+    },
   };
 
+  const c = config[priority];
+
   return (
-    <span className={`px-2 py-0.5 text-xs font-mono font-medium rounded border ${styles[priority]}`}>
-      {priority}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-semibold rounded-full border shadow-sm ${c.bg} ${c.text} ${c.border}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${c.dot} ${c.pulse ? 'animate-ping' : ''}`} />
+      <span>{priority}</span>
     </span>
   );
 };
 
 export const StatusBadge: React.FC<{ status: WorkItemStatus }> = ({ status }) => {
-  const styles: Record<WorkItemStatus, string> = {
-    OPEN: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    IN_PROGRESS: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
-    AWAITING_APPROVAL: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    RESOLVED: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    CLOSED: 'bg-slate-800 text-slate-400 border-slate-700',
-    CANCELLED: 'bg-red-950 text-red-400 border-red-800',
+  const config: Record<WorkItemStatus, { bg: string; text: string; border: string; dot: string; label: string }> = {
+    OPEN: {
+      bg: 'bg-sky-50',
+      text: 'text-sky-700',
+      border: 'border-sky-200/80',
+      dot: 'bg-sky-500',
+      label: 'Open',
+    },
+    IN_PROGRESS: {
+      bg: 'bg-indigo-50',
+      text: 'text-indigo-700',
+      border: 'border-indigo-200/80',
+      dot: 'bg-indigo-500',
+      label: 'In Progress',
+    },
+    AWAITING_APPROVAL: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-800',
+      border: 'border-amber-200/80',
+      dot: 'bg-amber-500',
+      label: 'Awaiting Approval',
+    },
+    RESOLVED: {
+      bg: 'bg-emerald-50',
+      text: 'text-emerald-700',
+      border: 'border-emerald-200/80',
+      dot: 'bg-emerald-500',
+      label: 'Resolved',
+    },
+    CLOSED: {
+      bg: 'bg-slate-100',
+      text: 'text-slate-600',
+      border: 'border-slate-200',
+      dot: 'bg-slate-400',
+      label: 'Closed',
+    },
+    CANCELLED: {
+      bg: 'bg-red-50',
+      text: 'text-red-700',
+      border: 'border-red-200',
+      dot: 'bg-red-400',
+      label: 'Cancelled',
+    },
   };
 
-  const labels: Record<WorkItemStatus, string> = {
-    OPEN: 'Open',
-    IN_PROGRESS: 'In Progress',
-    AWAITING_APPROVAL: 'Awaiting Approval',
-    RESOLVED: 'Resolved',
-    CLOSED: 'Closed',
-    CANCELLED: 'Cancelled',
-  };
+  const c = config[status];
 
   return (
-    <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${styles[status]}`}>
-      {labels[status]}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-medium rounded-full border shadow-sm ${c.bg} ${c.text} ${c.border}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+      <span>{c.label}</span>
     </span>
   );
 };
 
 export const TypeBadge: React.FC<{ type: WorkItemType }> = ({ type }) => {
   const styles: Record<WorkItemType, string> = {
-    INCIDENT: 'text-red-400 bg-red-950/40 border-red-800/40',
-    CUSTOMER_ISSUE: 'text-sky-400 bg-sky-950/40 border-sky-800/40',
-    PAYMENT: 'text-purple-400 bg-purple-950/40 border-purple-800/40',
-    COMPLIANCE: 'text-rose-400 bg-rose-950/40 border-rose-800/40',
-    TASK: 'text-slate-300 bg-slate-800 border-slate-700',
+    INCIDENT: 'text-rose-700 bg-rose-50 border-rose-200',
+    CUSTOMER_ISSUE: 'text-blue-700 bg-blue-50 border-blue-200',
+    PAYMENT: 'text-purple-700 bg-purple-50 border-purple-200',
+    COMPLIANCE: 'text-teal-700 bg-teal-50 border-teal-200',
+    TASK: 'text-slate-700 bg-slate-100 border-slate-200',
   };
 
   return (
-    <span className={`px-1.5 py-0.5 text-[11px] font-mono rounded border ${styles[type]}`}>
+    <span className={`px-2 py-0.5 text-[10px] font-mono font-medium rounded-md border ${styles[type]}`}>
       {type}
     </span>
   );
@@ -62,7 +116,7 @@ export const VersionBadge: React.FC<{ version: number }> = ({ version }) => {
   return (
     <span
       title="Optimistic Concurrency Control Version"
-      className="px-1.5 py-0.5 text-[10px] font-mono rounded bg-slate-800 text-slate-400 border border-slate-700"
+      className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-slate-100 text-slate-600 border border-slate-200"
     >
       v{version}
     </span>

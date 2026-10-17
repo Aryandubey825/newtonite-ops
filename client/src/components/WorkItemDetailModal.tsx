@@ -14,6 +14,8 @@ import {
   MessageSquare,
   ArrowRight,
   ShieldAlert,
+  User,
+  Edit3,
 } from 'lucide-react';
 
 interface Props {
@@ -204,57 +206,63 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
   const isClaimable = item?.status === 'OPEN' && !item.assigneeId;
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200/80 rounded-3xl w-full max-w-3xl shadow-billow-modal overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-          <div className="flex items-center space-x-3">
-            <span className="text-xs font-mono text-slate-400">ID: {item?.id.slice(0, 8)}</span>
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+            <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+              #{item?.id.slice(0, 8)}
+            </span>
             {item && <VersionBadge version={item.version} />}
             {item && <TypeBadge type={item.type} />}
             {item && <PriorityBadge priority={item.priority} />}
             {item && <StatusBadge status={item.status} />}
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
-            <X className="w-5 h-5" />
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Conflict / Rejection Alert Banner */}
         {conflictMessage && (
-          <div className="px-6 py-3 bg-amber-500/10 border-b border-amber-500/20 text-amber-300 text-xs flex items-center space-x-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+          <div className="px-6 py-3 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs flex items-center space-x-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
             <div className="flex-1 font-medium">{conflictMessage}</div>
             <button
               onClick={() => fetchItemAndActivity(itemId)}
-              className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 rounded text-[11px] font-bold"
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold shadow-sm transition"
             >
-              Reload State
+              Reload Latest State
             </button>
           </div>
         )}
 
         {/* Action Error Alert Banner */}
         {actionError && (
-          <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 text-red-300 text-xs flex items-center space-x-2">
-            <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
+          <div className="px-6 py-3 bg-rose-50 border-b border-rose-200 text-rose-800 text-xs flex items-center space-x-2.5">
+            <ShieldAlert className="w-4 h-4 shrink-0 text-rose-600" />
             <div className="flex-1 font-medium">{actionError}</div>
           </div>
         )}
 
         {/* Content Body */}
         {isLoading ? (
-          <div className="p-12 text-center text-slate-400 text-sm">Loading work item telemetry...</div>
+          <div className="p-16 text-center text-slate-400 text-xs font-medium">Loading telemetry details...</div>
         ) : item ? (
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
             {/* Quick Action Toolbar */}
-            <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3">
-              <div className="text-xs text-slate-400">
-                <span>Assignee: </span>
-                <span className="text-slate-200 font-semibold">
-                  {item.assignee ? item.assignee.fullName : 'Unassigned'}
+            <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center space-x-2 text-xs">
+                <User className="w-4 h-4 text-slate-400" />
+                <span className="text-slate-500 font-medium">Assignee:</span>
+                <span className="font-bold text-slate-800">
+                  {item.assignee ? item.assignee.fullName : 'Unassigned (Open)'}
                 </span>
               </div>
 
@@ -264,7 +272,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                   <button
                     onClick={handleClaim}
                     disabled={isActionLoading}
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow transition disabled:opacity-50"
+                    className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 transition disabled:opacity-50"
                   >
                     <UserCheck className="w-3.5 h-3.5" />
                     <span>Claim Item</span>
@@ -276,7 +284,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                   <button
                     onClick={() => handleTransition('AWAITING_APPROVAL')}
                     disabled={isActionLoading}
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                    className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
                   >
                     <Clock className="w-3.5 h-3.5" />
                     <span>Submit for Review</span>
@@ -291,13 +299,13 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                       placeholder="Approval note..."
                       value={approvalComment}
                       onChange={(e) => setApprovalComment(e.target.value)}
-                      className="bg-slate-800 border border-slate-700 text-xs px-2 py-1 rounded text-slate-200 focus:outline-none focus:border-amber-500"
+                      className="bg-white border border-slate-200 text-xs px-2.5 py-1.5 rounded-xl text-slate-800 focus:outline-none focus:border-amber-500 shadow-sm"
                     />
                     <button
                       onClick={() => handleTransition('RESOLVED', approvalComment)}
                       disabled={isActionLoading}
                       title="Only Team Leads or Admins can pass this gate"
-                      className="flex items-center space-x-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                      className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Approve & Resolve (Lead Gate)</span>
@@ -310,7 +318,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                   <button
                     onClick={() => handleTransition('CLOSED')}
                     disabled={isActionLoading}
-                    className="flex items-center space-x-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                    className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Close Work Item</span>
@@ -320,47 +328,48 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                 {!isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition"
+                    className="flex items-center space-x-1 px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 shadow-sm transition"
                   >
-                    Edit Details
+                    <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Edit</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="border-b border-slate-800 flex space-x-6 text-xs font-semibold">
+            {/* Billow Segmented Control Navigation Tabs */}
+            <div className="bg-slate-100/90 p-1 rounded-2xl flex space-x-1 text-xs font-semibold shadow-inner">
               <button
                 onClick={() => setActiveTab('details')}
-                className={`pb-2.5 transition ${
+                className={`flex-1 py-2 rounded-xl transition ${
                   activeTab === 'details'
-                    ? 'text-emerald-400 border-b-2 border-emerald-400'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Work Item Details
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`pb-2.5 flex items-center space-x-1.5 transition ${
+                className={`flex-1 py-2 rounded-xl flex items-center justify-center space-x-1.5 transition ${
                   activeTab === 'history'
-                    ? 'text-emerald-400 border-b-2 border-emerald-400'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <History className="w-3.5 h-3.5" />
+                <History className="w-3.5 h-3.5 text-slate-500" />
                 <span>Audit Timeline ({activities.length})</span>
               </button>
               <button
                 onClick={() => setActiveTab('comments')}
-                className={`pb-2.5 flex items-center space-x-1.5 transition ${
+                className={`flex-1 py-2 rounded-xl flex items-center justify-center space-x-1.5 transition ${
                   activeTab === 'comments'
-                    ? 'text-emerald-400 border-b-2 border-emerald-400'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Comments ({item.comments?.length || 0})</span>
+                <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
+                <span>Discussion ({item.comments?.length || 0})</span>
               </button>
             </div>
 
@@ -370,21 +379,21 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                 {isEditing ? (
                   <form onSubmit={handleSaveEdit} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Title</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Title</label>
                       <input
                         type="text"
                         required
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Priority</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Priority</label>
                       <select
                         value={priority}
                         onChange={(e) => setPriority(e.target.value as WorkItemPriority)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
                       >
                         <option value="URGENT">Urgent</option>
                         <option value="HIGH">High</option>
@@ -393,26 +402,26 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Description</label>
                       <textarea
                         rows={4}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 resize-none"
+                        className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition resize-none"
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 pt-1">
                       <button
                         type="submit"
                         disabled={isActionLoading}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition"
+                        className="px-5 py-2.5 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 transition"
                       >
-                        {isActionLoading ? 'Saving...' : `Save Changes (OCC v${item.version})`}
+                        {isActionLoading ? 'Saving...' : `Save (OCC v${item.version})`}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsEditing(false)}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition"
+                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
                       >
                         Cancel
                       </button>
@@ -421,19 +430,19 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                 ) : (
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-bold text-slate-100">{item.title}</h3>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Created by {item.createdBy?.fullName || 'Operator'} on{' '}
+                      <h3 className="text-lg font-bold text-slate-900 tracking-tight">{item.title}</h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Reported by <strong className="text-slate-700">{item.createdBy?.fullName || 'Operator'}</strong> on{' '}
                         {new Date(item.createdAt).toLocaleString()}
                       </p>
                     </div>
 
-                    <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/80">
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                    <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                      <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Operational Description
                       </h4>
-                      <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
-                        {item.description || 'No description provided.'}
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {item.description || 'No operational description provided.'}
                       </p>
                     </div>
                   </div>
@@ -445,33 +454,33 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
             {activeTab === 'history' && (
               <div className="space-y-3">
                 {activities.length === 0 ? (
-                  <div className="text-xs text-slate-400 py-4 text-center">No activity events logged yet.</div>
+                  <div className="text-xs text-slate-400 py-6 text-center">No audit trail records yet.</div>
                 ) : (
                   activities.map((act) => (
                     <div
                       key={act.id}
-                      className="flex items-start space-x-3 p-3 bg-slate-950/40 border border-slate-800/80 rounded-xl text-xs"
+                      className="flex items-start space-x-3.5 p-3.5 bg-slate-50/60 border border-slate-200/70 rounded-2xl text-xs shadow-sm hover:shadow transition"
                     >
-                      <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-300 shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-inner">
                         {act.actor.fullName.charAt(0)}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-slate-200">{act.actor.fullName}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="font-bold text-slate-900">{act.actor.fullName}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">
                             {new Date(act.createdAt).toLocaleTimeString()}
                           </span>
                         </div>
-                        <div className="text-slate-400 mt-0.5">
-                          Event: <span className="text-emerald-400 font-mono font-medium">{act.eventType}</span>
+                        <div className="text-slate-500 mt-0.5">
+                          Action: <span className="text-blue-600 font-mono font-bold">{act.eventType}</span>
                         </div>
                         {act.oldState && act.newState && (
-                          <div className="mt-1.5 p-2 bg-slate-900 rounded font-mono text-[11px] text-slate-300 flex items-center space-x-2">
-                            <span className="text-red-400 line-through">
+                          <div className="mt-2 p-2.5 bg-white border border-slate-200/80 rounded-xl font-mono text-[11px] text-slate-700 flex items-center space-x-2 shadow-inner">
+                            <span className="text-rose-600 line-through">
                               {JSON.stringify(act.oldState)}
                             </span>
-                            <ArrowRight className="w-3 h-3 text-slate-500" />
-                            <span className="text-emerald-400">
+                            <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-emerald-600 font-semibold">
                               {JSON.stringify(act.newState)}
                             </span>
                           </div>
@@ -493,35 +502,35 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
                     placeholder="Add operational notes or post-mortem comment..."
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="flex-1 bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
                   />
                   <button
                     type="submit"
-                    className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1"
+                    className="px-4 py-2.5 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 flex items-center space-x-1.5 transition"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Comment</span>
+                    <span>Post</span>
                   </button>
                 </form>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {item.comments && item.comments.length > 0 ? (
                     item.comments.map((c) => (
                       <div
                         key={c.id}
-                        className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-xl space-y-1"
+                        className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-1 shadow-sm"
                       >
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-semibold text-slate-200">{c.author.fullName}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="font-bold text-slate-900">{c.author.fullName}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">
                             {new Date(c.createdAt).toLocaleString()}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed">{c.content}</p>
+                        <p className="text-xs text-slate-700 leading-relaxed">{c.content}</p>
                       </div>
                     ))
                   ) : (
-                    <div className="text-xs text-slate-500 text-center py-4">No comments posted yet.</div>
+                    <div className="text-xs text-slate-400 text-center py-6">No comments posted yet.</div>
                   )}
                 </div>
               </div>

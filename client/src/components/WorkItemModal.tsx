@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { WorkItemPriority, WorkItemType } from '../types';
-import { X, Plus, AlertCircle } from 'lucide-react';
+import { X, Plus, AlertCircle, Calendar } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -51,37 +51,45 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200/80 rounded-3xl w-full max-w-xl shadow-billow-modal overflow-hidden">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Plus className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-base font-semibold text-slate-100">Create Operational Work Item</h2>
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/80 shadow-sm">
+              <Plus className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">New Operational Work Item</h2>
+              <p className="text-xs text-slate-500">Atomic dispatch with append-only audit tracking</p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
-            <X className="w-5 h-5" />
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mx-6 mt-4 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center space-x-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            <span className="font-medium">{error}</span>
           </div>
         )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Target Team *</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Team</label>
             <select
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition"
             >
               {teams.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -92,39 +100,39 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Title *</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Work Item Title</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Gateway Timeout on Settlement API"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 transition"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">Type *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Type</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as WorkItemType)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 transition"
               >
                 <option value="INCIDENT">Incident</option>
                 <option value="CUSTOMER_ISSUE">Customer Issue</option>
-                <option value="PAYMENT">Payment Failure</option>
-                <option value="COMPLIANCE">Compliance Alert</option>
-                <option value="TASK">Operational Task</option>
+                <option value="PAYMENT">Payment</option>
+                <option value="COMPLIANCE">Compliance</option>
+                <option value="TASK">Task</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">Priority *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Priority</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as WorkItemPriority)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 transition"
               >
                 <option value="URGENT">🚨 Urgent</option>
                 <option value="HIGH">High</option>
@@ -135,23 +143,26 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Due Date</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>Target Due Date</span>
+            </label>
             <input
               type="datetime-local"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Operational Description</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Operational Context & Details</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Provide background context, logs, or triage details..."
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 resize-none"
+              placeholder="Provide background telemetry, logs, or triage details..."
+              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 transition resize-none"
             />
           </div>
 
@@ -159,16 +170,16 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200"
+              className="px-4 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition disabled:opacity-50"
+              className="px-5 py-2.5 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 transition disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating...' : 'Create Item'}
+              {isSubmitting ? 'Dispatching...' : 'Create Item'}
             </button>
           </div>
         </form>
