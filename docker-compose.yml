@@ -43,6 +43,8 @@ services:
       dockerfile: Dockerfile
     container_name: newtonite_client
     restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://server:4000
     ports:
       - "3000:3000"
     depends_on:
