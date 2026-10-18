@@ -29,6 +29,14 @@ export function getAuthToken(): string | null {
 
 const API_BASE = ((import.meta as any).env?.VITE_API_URL || '').replace(/\/+$/, '');
 
+import { handleDemoRequest } from './demoStore';
+
+let isDemoModeActive = false;
+
+export function isDemoMode(): boolean {
+  return isDemoModeActive;
+}
+
 export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
@@ -49,13 +57,31 @@ export async function apiRequest<T = any>(
     }
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  // If already identified as demo mode (e.g. on Vercel preview), serve directly from demoStore
+  if (isDemoModeActive) {
+    return handleDemoRequest<T>(endpoint, options);
+  }
 
-  if (!response.ok) {
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (response.ok) {
+      return response.json();
+    }
+
+    // If 404/405 or HTML returned (Vercel static host with no backend), switch to demo store!
+    const contentType = response.headers.get('content-type') || '';
+    if (response.status === 404 || response.status === 405 || contentType.includes('text/html')) {
+      console.warn(`[Newtonite API] Endpoint ${endpoint} returned ${response.status}. Switching to Smart Demo Store for Vercel preview.`);
+      isDemoModeActive = true;
+      return handleDemoRequest<T>(endpoint, options);
+    }
+
     let errData: any = {};
     try {
       errData = await response.json();
@@ -69,7 +95,13 @@ export async function apiRequest<T = any>(
       errData.details,
       errData.error
     );
+  } catch (err: any) {
+    // If fetch failed due to network error / unreachable host (e.g. on Vercel preview without cloud backend)
+    if (err instanceof ApiError) {
+      throw err;
+    }
+    console.warn(`[Newtonite API] Network unreachable for ${endpoint} (${err.message}). Activating Smart Demo Store for Vercel preview.`);
+    isDemoModeActive = true;
+    return handleDemoRequest<T>(endpoint, options);
   }
-
-  return response.json();
 }
