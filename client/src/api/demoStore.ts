@@ -4,6 +4,24 @@ import { ApiError } from './errors';
 const PASSWORDS_STORAGE_KEY = 'newtonite_demo_passwords';
 const USERS_STORAGE_KEY = 'newtonite_demo_users';
 const COMMENTS_STORAGE_KEY = 'newtonite_demo_comments';
+const ACTIVE_USER_EMAIL_KEY = 'newtonite_demo_active_user_email';
+
+function getStoredActiveUserEmail(): string | null {
+  try {
+    return localStorage.getItem(ACTIVE_USER_EMAIL_KEY);
+  } catch {}
+  return null;
+}
+
+function saveStoredActiveUserEmail(email: string | null) {
+  try {
+    if (email) {
+      localStorage.setItem(ACTIVE_USER_EMAIL_KEY, email.toLowerCase().trim());
+    } else {
+      localStorage.removeItem(ACTIVE_USER_EMAIL_KEY);
+    }
+  } catch {}
+}
 
 const DEFAULT_COMMENTS: Record<string, Comment[]> = {
   'item-1': [
@@ -267,7 +285,48 @@ export const DEMO_WORKSPACE_USERS: WorkspaceUser[] = Object.values(DEMO_USERS).m
   avatarUrl: u.avatarUrl,
 }));
 
-let currentDemoUser: User = DEMO_USERS['admin@newtonite.io'];
+export function getCurrentDemoUser(optionsHeaders?: any): User {
+  const storedUsers = getStoredUsers();
+  Object.assign(DEMO_USERS, storedUsers);
+
+  // 1. Check Authorization header token if passed
+  try {
+    let token: string | null = null;
+    if (optionsHeaders) {
+      if (typeof optionsHeaders.get === 'function') {
+        const auth = optionsHeaders.get('Authorization');
+        if (auth && auth.startsWith('Bearer ')) token = auth.replace('Bearer ', '').trim();
+      } else if (optionsHeaders.Authorization) {
+        token = optionsHeaders.Authorization.replace('Bearer ', '').trim();
+      } else if (optionsHeaders.authorization) {
+        token = optionsHeaders.authorization.replace('Bearer ', '').trim();
+      }
+    }
+    if (!token) {
+      token = localStorage.getItem('newtonite_token');
+    }
+    if (token && token.startsWith('demo-jwt-token-')) {
+      const userId = token.replace('demo-jwt-token-', '');
+      const userById = Object.values(DEMO_USERS).find((u) => u.id === userId);
+      if (userById) {
+        saveStoredActiveUserEmail(userById.email);
+        return userById;
+      }
+    }
+  } catch {}
+
+  // 2. Check stored active user email in localStorage
+  const storedEmail = getStoredActiveUserEmail();
+  if (storedEmail) {
+    if (DEMO_USERS[storedEmail]) return DEMO_USERS[storedEmail];
+    if (storedUsers[storedEmail]) return storedUsers[storedEmail];
+  }
+
+  // 3. Fallback to Admin
+  return DEMO_USERS['admin@newtonite.io'];
+}
+
+let currentDemoUser: User = getCurrentDemoUser();
 
 export const INITIAL_WORK_ITEMS: WorkItem[] = [
   {
@@ -514,6 +573,9 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   const pathname = urlObj.pathname;
   const searchParams = urlObj.searchParams;
 
+  // Sync current demo user with latest persistent state
+  currentDemoUser = getCurrentDemoUser(options.headers);
+
   // 1. Auth: Login
   if (pathname === '/api/auth/login' && method === 'POST') {
     const body = options.body ? JSON.parse(options.body as string) : {};
@@ -534,6 +596,7 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
     }
 
     currentDemoUser = matchedUser;
+    saveStoredActiveUserEmail(matchedUser.email);
     return {
       token: `demo-jwt-token-${matchedUser.id}`,
       user: matchedUser,
@@ -542,6 +605,7 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
 
   // 2. Auth: Me
   if (pathname === '/api/auth/me') {
+    currentDemoUser = getCurrentDemoUser(options.headers);
     return { user: currentDemoUser } as T;
   }
 
@@ -638,6 +702,7 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
       memberships: [{ teamId, teamName, teamSlug, role }],
     };
     currentDemoUser = acceptedUser;
+    saveStoredActiveUserEmail(email);
 
     // Persist password and user so subsequent logins strictly require this password
     saveStoredPassword(email, chosenPassword);

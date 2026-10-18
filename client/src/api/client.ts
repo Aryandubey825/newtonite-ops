@@ -48,7 +48,7 @@ export async function apiRequest<T = any>(
 
   // If already identified as demo mode (e.g. on Vercel preview), serve directly from demoStore
   if (isDemoModeActive) {
-    return handleDemoRequest<T>(endpoint, options);
+    return handleDemoRequest<T>(endpoint, { ...options, headers });
   }
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
@@ -64,7 +64,7 @@ export async function apiRequest<T = any>(
     if (response.status === 404 || response.status === 405 || contentType.includes('text/html')) {
       console.warn(`[Newtonite API] Endpoint ${endpoint} returned ${response.status} (${contentType}). Switching to Smart Demo Store for Vercel preview.`);
       isDemoModeActive = true;
-      return handleDemoRequest<T>(endpoint, options);
+      return handleDemoRequest<T>(endpoint, { ...options, headers });
     }
 
     if (response.ok) {
@@ -91,6 +91,6 @@ export async function apiRequest<T = any>(
     }
     console.warn(`[Newtonite API] Network unreachable for ${endpoint} (${err.message}). Activating Smart Demo Store for Vercel preview.`);
     isDemoModeActive = true;
-    return handleDemoRequest<T>(endpoint, options);
+    return handleDemoRequest<T>(endpoint, { ...options, headers });
   }
 }

@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ email, password: passwordPlain }),
       });
       setAuthToken(res.token);
+      localStorage.setItem('newtonite_demo_active_user_email', res.user.email.toLowerCase().trim());
       setUser(res.user);
 
       const teamsRes = await apiRequest<{ teams: Team[]; totalWorkspaceUsers?: number }>('/api/teams');
@@ -113,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.setItem('newtonite_logged_out', 'true');
+    localStorage.removeItem('newtonite_demo_active_user_email');
     setAuthToken(null);
     setUser(null);
     setTeams([]);
