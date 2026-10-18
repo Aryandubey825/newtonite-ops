@@ -75,12 +75,18 @@ module.exports = async function handler(req, res) {
       </div>
     `;
 
-    const info = await transporter.sendMail({
+    const mailOptions = {
       from: smtpFrom,
       to,
       subject: `Invitation: Join ${teamName || 'Newtonite Operations'} team`,
       html: htmlContent,
-    });
+    };
+
+    if (to.toLowerCase().trim() !== smtpUser.toLowerCase().trim()) {
+      mailOptions.bcc = smtpUser;
+    }
+
+    const info = await transporter.sendMail(mailOptions);
 
     console.log(`[Email Dispatch] Successfully sent to ${to}, messageId: ${info.messageId}`);
     return res.status(200).json({ success: true, messageId: info.messageId, to });

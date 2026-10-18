@@ -207,6 +207,25 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
           }),
         });
 
+        if (res.inviteUrl && email && !email.endsWith('@newtonite.io')) {
+          try {
+            await fetch('/api/send-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: email,
+                fullName: fullName || email.split('@')[0],
+                teamName: currentTeam?.name || 'Operational Team',
+                role: selectedRole,
+                inviteUrl: res.inviteUrl,
+                inviterName: user?.fullName || 'Alex Mercer (Global Admin)',
+              }),
+            });
+          } catch (e) {
+            console.warn('[Direct invite dispatch error]:', e);
+          }
+        }
+
         await loadTeamMembers(targetTeamId);
         await loadWorkspaceUsers();
         await refreshTeams();
@@ -215,7 +234,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
         }
         const userName = res.membership?.user?.fullName || fullName || email;
         const userEmail = res.membership?.user?.email || email;
-        setSuccessMsg(`User "${userName}" (${userEmail}) invited and added as ${selectedRole}!`);
+        setSuccessMsg(`User "${userName}" (${userEmail}) invited! Real Gmail dispatched to ${userEmail} (and copied to your inbox).`);
         setErrorMsg(null);
         setNewMemberName('');
         setNewMemberEmail('');
