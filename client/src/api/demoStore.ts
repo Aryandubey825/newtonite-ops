@@ -1,4 +1,40 @@
 import { User, Team, TeamMember, WorkspaceUser, WorkItem, WorkItemListResponse, TeamRole, ActivityEvent } from '../types';
+import { ApiError } from './errors';
+
+const PASSWORDS_STORAGE_KEY = 'newtonite_demo_passwords';
+const USERS_STORAGE_KEY = 'newtonite_demo_users';
+
+function getStoredPasswords(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(PASSWORDS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+}
+
+function saveStoredPassword(email: string, pass: string) {
+  try {
+    const all = getStoredPasswords();
+    all[email.toLowerCase().trim()] = pass;
+    localStorage.setItem(PASSWORDS_STORAGE_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+function getStoredUsers(): Record<string, User> {
+  try {
+    const raw = localStorage.getItem(USERS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+}
+
+function saveStoredUser(email: string, user: User) {
+  try {
+    const all = getStoredUsers();
+    all[email.toLowerCase().trim()] = user;
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(all));
+  } catch {}
+}
 
 export const DEMO_TEAMS: Team[] = [
   {
@@ -394,13 +430,21 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   if (pathname === '/api/auth/login' && method === 'POST') {
     const body = options.body ? JSON.parse(options.body as string) : {};
     const email = (body.email || '').toLowerCase().trim();
-    const matchedUser = DEMO_USERS[email] || {
-      id: `usr-${Date.now()}`,
-      email,
-      fullName: email.split('@')[0],
-      avatarUrl: undefined,
-      memberships: [{ teamId: 'team-secops', teamName: 'SecOps & Incident Response', teamSlug: 'secops', role: 'ADMIN' as TeamRole }],
-    };
+    const enteredPassword = body.password || '';
+
+    // Merge registered users from localStorage
+    Object.assign(DEMO_USERS, getStoredUsers());
+
+    const storedPasswords = getStoredPasswords();
+    const matchedUser = DEMO_USERS[email];
+
+    // Pre-seeded demo accounts default to 'Password123!', custom users must use their set password
+    const expectedPassword = storedPasswords[email] || (matchedUser ? 'Password123!' : null);
+
+    if (!matchedUser || !expectedPassword || enteredPassword !== expectedPassword) {
+      throw new ApiError(401, 'Invalid email or password. Please check your credentials.');
+    }
+
     currentDemoUser = matchedUser;
     return {
       token: `demo-jwt-token-${matchedUser.id}`,
@@ -494,6 +538,11 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
       }
     }
 
+    const chosenPassword = body.password || '';
+    if (chosenPassword.length < 6) {
+      throw new ApiError(400, 'Password must be at least 6 characters long.');
+    }
+
     const acceptedUser: User = {
       id: `usr-${Date.now()}`,
       email,
@@ -501,6 +550,12 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
       memberships: [{ teamId, teamName, teamSlug, role }],
     };
     currentDemoUser = acceptedUser;
+
+    // Persist password and user so subsequent logins strictly require this password
+    saveStoredPassword(email, chosenPassword);
+    DEMO_USERS[email] = acceptedUser;
+    saveStoredUser(email, acceptedUser);
+
     return {
       token: `demo-jwt-token-${acceptedUser.id}`,
       user: acceptedUser,
