@@ -1,8 +1,96 @@
-import { User, Team, TeamMember, WorkspaceUser, WorkItem, WorkItemListResponse, TeamRole, ActivityEvent } from '../types';
+import { User, Team, TeamMember, WorkspaceUser, WorkItem, WorkItemListResponse, TeamRole, ActivityEvent, Comment } from '../types';
 import { ApiError } from './errors';
 
 const PASSWORDS_STORAGE_KEY = 'newtonite_demo_passwords';
 const USERS_STORAGE_KEY = 'newtonite_demo_users';
+const COMMENTS_STORAGE_KEY = 'newtonite_demo_comments';
+
+const DEFAULT_COMMENTS: Record<string, Comment[]> = {
+  'item-1': [
+    {
+      id: 'comm-101',
+      workItemId: 'item-1',
+      authorId: 'usr-lead-secops',
+      content: 'WAF rules deployed to block attacker IP range. Monitoring packet anomaly counters.',
+      createdAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+      author: {
+        id: 'usr-lead-secops',
+        fullName: 'Sarah Connor (SecOps Lead)',
+        email: 'lead.secops@newtonite.io',
+      },
+    },
+  ],
+  'item-2': [
+    {
+      id: 'comm-201',
+      workItemId: 'item-2',
+      authorId: 'usr-lead-secops',
+      content: 'Canary cluster updated with 3.0.12 patch. Zero regression detected in test suite.',
+      createdAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+      author: {
+        id: 'usr-lead-secops',
+        fullName: 'Sarah Connor (SecOps Lead)',
+        email: 'lead.secops@newtonite.io',
+      },
+    },
+  ],
+  'item-3': [
+    {
+      id: 'comm-301',
+      workItemId: 'item-3',
+      authorId: 'usr-member-secops',
+      content: 'Audit log confirms keys ak_live_9921 and ak_test_4412 have not been accessed in 45 days. Ready for revocation approval.',
+      createdAt: new Date(Date.now() - 1000 * 60 * 40).toISOString(),
+      author: {
+        id: 'usr-member-secops',
+        fullName: 'John Reese (SecOps Member)',
+        email: 'member.secops@newtonite.io',
+      },
+    },
+  ],
+  'item-4': [
+    {
+      id: 'comm-401',
+      workItemId: 'item-4',
+      authorId: 'usr-lead-payments',
+      content: 'Bank partner SFTP channel restored. Waiting on finance team to reconcile batch #4092 ledger entries.',
+      createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+      author: {
+        id: 'usr-lead-payments',
+        fullName: 'Rachel Zane (Payments Lead)',
+        email: 'lead.payments@newtonite.io',
+      },
+    },
+  ],
+};
+
+function getStoredComments(itemId?: string): Record<string, Comment[]> | Comment[] {
+  let all: Record<string, Comment[]> = {};
+  try {
+    const raw = localStorage.getItem(COMMENTS_STORAGE_KEY);
+    if (raw) all = JSON.parse(raw);
+  } catch {}
+
+  for (const [key, comments] of Object.entries(DEFAULT_COMMENTS)) {
+    if (!all[key]) {
+      all[key] = [...comments];
+    }
+  }
+
+  if (itemId) {
+    return all[itemId] || [];
+  }
+  return all;
+}
+
+function saveStoredComment(itemId: string, comment: Comment) {
+  try {
+    const all = (getStoredComments() as Record<string, Comment[]>);
+    if (!all[itemId]) all[itemId] = [];
+    all[itemId].push(comment);
+    localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(all));
+  } catch {}
+}
 
 function getStoredPasswords(): Record<string, string> {
   try {
@@ -765,23 +853,89 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
         },
       },
     ];
+
+    // Include comment events in activity trail
+    const itemComments = (getStoredComments(itemId) as Comment[]);
+    itemComments.forEach((c) => {
+      activities.push({
+        id: `act-comm-${c.id}`,
+        workItemId: itemId,
+        actorId: c.authorId,
+        eventType: 'COMMENT_ADDED',
+        createdAt: c.createdAt,
+        newState: { snippet: c.content.slice(0, 80) },
+        actor: c.author,
+      });
+    });
+
     return { activities } as T;
   }
 
-  // 11. Work Items: Item Detail
+  // 11. Work Items: Item Detail (GET & PATCH)
   const itemDetailMatch = pathname.match(/^\/api\/items\/([^/]+)$/);
   if (itemDetailMatch && method === 'GET') {
     const itemId = itemDetailMatch[1];
     const item = workItemsStore.find((i) => i.id === itemId) || workItemsStore[0];
+    const comments = (getStoredComments(itemId) as Comment[]);
     return {
       item: {
         ...item,
-        comments: [],
+        comments,
       },
     } as T;
   }
 
-  // 12. Work Items: Claim Item
+  if (itemDetailMatch && method === 'PATCH') {
+    const itemId = itemDetailMatch[1];
+    const body = options.body ? JSON.parse(options.body as string) : {};
+    const item = workItemsStore.find((i) => i.id === itemId);
+    if (!item) {
+      throw new ApiError(404, 'Work item not found');
+    }
+    if (typeof body.version === 'number' && body.version !== item.version) {
+      throw new ApiError(409, `Conflict: Work item was updated by another operator. Current version is ${item.version}.`);
+    }
+    if (body.title !== undefined) item.title = body.title;
+    if (body.description !== undefined) item.description = body.description;
+    if (body.priority !== undefined) item.priority = body.priority;
+    item.version += 1;
+    item.updatedAt = new Date().toISOString();
+    return { item } as T;
+  }
+
+  // 12. Work Items: Add Comment
+  const itemCommentMatch = pathname.match(/^\/api\/items\/([^/]+)\/comments$/);
+  if (itemCommentMatch && method === 'POST') {
+    const itemId = itemCommentMatch[1];
+    const body = options.body ? JSON.parse(options.body as string) : {};
+    const content = (body.content || '').trim();
+    if (!content) {
+      throw new ApiError(400, 'Comment content cannot be empty.');
+    }
+    const newComment: Comment = {
+      id: `comm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      workItemId: itemId,
+      authorId: currentDemoUser.id,
+      content,
+      createdAt: new Date().toISOString(),
+      author: {
+        id: currentDemoUser.id,
+        fullName: currentDemoUser.fullName,
+        email: currentDemoUser.email,
+        avatarUrl: currentDemoUser.avatarUrl,
+      },
+    };
+    saveStoredComment(itemId, newComment);
+
+    const targetItem = workItemsStore.find((i) => i.id === itemId);
+    if (targetItem) {
+      targetItem.updatedAt = new Date().toISOString();
+    }
+
+    return { comment: newComment } as T;
+  }
+
+  // 13. Work Items: Claim Item
   const itemClaimMatch = pathname.match(/^\/api\/items\/([^/]+)\/claim$/);
   if (itemClaimMatch && method === 'POST') {
     const itemId = itemClaimMatch[1];
@@ -796,7 +950,7 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
     }
   }
 
-  // 13. Work Items: Transition Item
+  // 14. Work Items: Transition Item
   const itemTransitionMatch = pathname.match(/^\/api\/items\/([^/]+)\/transition$/);
   if (itemTransitionMatch && method === 'POST') {
     const itemId = itemTransitionMatch[1];
