@@ -5,6 +5,8 @@ const PASSWORDS_STORAGE_KEY = 'newtonite_demo_passwords';
 const USERS_STORAGE_KEY = 'newtonite_demo_users';
 const COMMENTS_STORAGE_KEY = 'newtonite_demo_comments';
 const ACTIVE_USER_EMAIL_KEY = 'newtonite_demo_active_user_email';
+const MEMBERS_STORAGE_KEY = 'newtonite_demo_team_members';
+const INVITES_STORAGE_KEY = 'newtonite_demo_invites';
 
 function getStoredActiveUserEmail(): string | null {
   try {
@@ -21,6 +23,45 @@ function saveStoredActiveUserEmail(email: string | null) {
       localStorage.removeItem(ACTIVE_USER_EMAIL_KEY);
     }
   } catch {}
+}
+
+interface StoredInviteData {
+  email: string;
+  fullName: string;
+  role: TeamRole;
+  teamId: string;
+  inviterName: string;
+}
+
+function getStoredInvites(): Record<string, StoredInviteData> {
+  try {
+    const raw = localStorage.getItem(INVITES_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+}
+
+function saveStoredInvite(token: string, data: StoredInviteData) {
+  try {
+    const all = getStoredInvites();
+    all[token] = data;
+    localStorage.setItem(INVITES_STORAGE_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+function createDemoInviteToken(payload: StoredInviteData): string {
+  const jsonStr = JSON.stringify({
+    ...payload,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+  });
+  const base64Url = btoa(unescape(encodeURIComponent(jsonStr)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  const token = `demo-inv.${base64Url}.${Date.now()}`;
+  saveStoredInvite(token, payload);
+  return token;
 }
 
 const DEFAULT_COMMENTS: Record<string, Comment[]> = {
@@ -565,7 +606,25 @@ const INITIAL_TEAM_MEMBERS: Record<string, TeamMember[]> = {
   ],
 };
 
-let teamMembersStore: Record<string, TeamMember[]> = { ...INITIAL_TEAM_MEMBERS };
+function getStoredTeamMembers(): Record<string, TeamMember[]> {
+  try {
+    const raw = localStorage.getItem(MEMBERS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  const initial: Record<string, TeamMember[]> = {};
+  for (const [k, v] of Object.entries(INITIAL_TEAM_MEMBERS)) {
+    initial[k] = [...v];
+  }
+  return initial;
+}
+
+function saveStoredTeamMembers(members: Record<string, TeamMember[]>) {
+  try {
+    localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(members));
+  } catch {}
+}
+
+let teamMembersStore: Record<string, TeamMember[]> = getStoredTeamMembers();
 
 export function handleDemoRequest<T = any>(endpoint: string, options: RequestInit = {}): T {
   const method = (options.method || 'GET').toUpperCase();
@@ -612,41 +671,48 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   // 2b. Auth: Invite Info
   if (pathname === '/api/auth/invite-info' && method === 'GET') {
     const token = searchParams.get('token') || '';
-    let email = 'aryandubey825@gmail.com';
-    let fullName = 'Aryan Duve';
+    let email = '';
+    let fullName = '';
     let role: TeamRole = 'MEMBER';
-    let team = { id: 'team-secops', name: 'SecOps & Incident Response', slug: 'secops' };
+    let teamId = 'team-secops';
     let inviterName = 'Alex Mercer (Global Admin)';
 
+    // 1. Try decoding JWT / base64 payload from token
     if (token && token.includes('.')) {
       try {
-        const payloadBase64 = token.split('.')[1];
+        const parts = token.split('.');
+        const payloadBase64 = parts[1] || parts[0];
         const normalizedBase64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonStr = decodeURIComponent(
-          atob(normalizedBase64)
-            .split('')
-            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
+        const jsonStr = decodeURIComponent(escape(atob(normalizedBase64)));
         const decoded = JSON.parse(jsonStr);
         if (decoded.email) email = decoded.email;
         if (decoded.fullName) fullName = decoded.fullName;
         if (decoded.role) role = decoded.role as TeamRole;
         if (decoded.inviterName) inviterName = decoded.inviterName;
-        if (decoded.teamId) {
-          const matchedTeam = teamsStore.find((t) => t.id === decoded.teamId);
-          if (matchedTeam) {
-            team = { id: matchedTeam.id, name: matchedTeam.name, slug: matchedTeam.slug };
-          }
-        }
+        if (decoded.teamId) teamId = decoded.teamId;
       } catch (err) {
-        console.warn('Could not decode JWT payload in demo store:', err);
+        console.warn('Could not decode invite token payload in demo store:', err);
       }
     }
 
+    // 2. Check stored invites map in localStorage
+    if (!email && token) {
+      const stored = getStoredInvites();
+      if (stored[token]) {
+        email = stored[token].email;
+        fullName = stored[token].fullName;
+        role = stored[token].role;
+        teamId = stored[token].teamId;
+        inviterName = stored[token].inviterName;
+      }
+    }
+
+    const matchedTeam = teamsStore.find((t) => t.id === teamId) || teamsStore[0];
+    const team = { id: matchedTeam.id, name: matchedTeam.name, slug: matchedTeam.slug };
+
     return {
-      email,
-      fullName,
+      email: email || 'invitee@gmail.com',
+      fullName: fullName || (email ? email.split('@')[0] : 'Invited Member'),
       role,
       team,
       inviterName,
@@ -656,38 +722,39 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   // 2c. Auth: Accept Invite
   if (pathname === '/api/auth/accept-invite' && method === 'POST') {
     const body = options.body ? JSON.parse(options.body as string) : {};
-    let email = 'aryandubey825@gmail.com';
-    let fullName = body.fullName || 'Aryan Duve';
+    let email = '';
+    let fullName = body.fullName || '';
     let role: TeamRole = 'MEMBER';
     let teamId = 'team-secops';
-    let teamName = 'SecOps & Incident Response';
-    let teamSlug = 'secops';
 
     if (body.token && body.token.includes('.')) {
       try {
-        const payloadBase64 = body.token.split('.')[1];
+        const parts = body.token.split('.');
+        const payloadBase64 = parts[1] || parts[0];
         const normalizedBase64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonStr = decodeURIComponent(
-          atob(normalizedBase64)
-            .split('')
-            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
+        const jsonStr = decodeURIComponent(escape(atob(normalizedBase64)));
         const decoded = JSON.parse(jsonStr);
         if (decoded.email) email = decoded.email;
-        if (decoded.fullName && !body.fullName) fullName = decoded.fullName;
+        if (decoded.fullName && !fullName) fullName = decoded.fullName;
         if (decoded.role) role = decoded.role as TeamRole;
-        if (decoded.teamId) {
-          const matchedTeam = teamsStore.find((t) => t.id === decoded.teamId);
-          if (matchedTeam) {
-            teamId = matchedTeam.id;
-            teamName = matchedTeam.name;
-            teamSlug = matchedTeam.slug;
-          }
-        }
+        if (decoded.teamId) teamId = decoded.teamId;
       } catch (err) {
         console.warn('Could not decode JWT payload in accept-invite demo store:', err);
       }
+    }
+
+    if (!email && body.token) {
+      const stored = getStoredInvites();
+      if (stored[body.token]) {
+        email = stored[body.token].email;
+        if (!fullName) fullName = stored[body.token].fullName;
+        role = stored[body.token].role;
+        teamId = stored[body.token].teamId;
+      }
+    }
+
+    if (!email) {
+      email = 'member@newtonite.io';
     }
 
     const chosenPassword = body.password || '';
@@ -695,11 +762,14 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
       throw new ApiError(400, 'Password must be at least 6 characters long.');
     }
 
+    const matchedTeam = teamsStore.find((t) => t.id === teamId) || teamsStore[0];
+    fullName = fullName || email.split('@')[0];
+
     const acceptedUser: User = {
       id: `usr-${Date.now()}`,
       email,
       fullName,
-      memberships: [{ teamId, teamName, teamSlug, role }],
+      memberships: [{ teamId: matchedTeam.id, teamName: matchedTeam.name, teamSlug: matchedTeam.slug, role }],
     };
     currentDemoUser = acceptedUser;
     saveStoredActiveUserEmail(email);
@@ -760,50 +830,223 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   const teamMembersMatch = pathname.match(/^\/api\/teams\/([^/]+)\/members$/);
   if (teamMembersMatch && method === 'GET') {
     const teamId = teamMembersMatch[1];
-    const members = teamMembersStore[teamId] || teamMembersStore['team-secops'] || [];
+    teamMembersStore = getStoredTeamMembers();
+    const members = teamMembersStore[teamId] || [];
     return { members } as T;
   }
 
-  // 7. Teams: Add Member
+  // 7. Teams: Add or Update Member Role
   if (teamMembersMatch && method === 'POST') {
     const teamId = teamMembersMatch[1];
     const body = options.body ? JSON.parse(options.body as string) : {};
-    const newMemberId = body.userId || `usr-${Date.now()}`;
-    const newMember: WorkspaceUser = {
-      id: newMemberId,
-      fullName: body.fullName || (body.email ? body.email.split('@')[0] : 'New Member'),
-      email: body.email || 'newmember@newtonite.io',
-      avatarUrl: undefined,
-    };
-
-    if (!DEMO_WORKSPACE_USERS.some((u) => u.id === newMemberId)) {
-      DEMO_WORKSPACE_USERS.push(newMember);
-    }
-
-    const newMembership: TeamMember = {
-      id: `mem-${newMemberId}-${teamId}`,
-      userId: newMemberId,
-      teamId,
-      role: (body.role || 'MEMBER') as TeamRole,
-      createdAt: new Date().toISOString(),
-      user: newMember,
-    };
-
+    const targetTeam = teamsStore.find((t) => t.id === teamId) || teamsStore[0];
+    teamMembersStore = getStoredTeamMembers();
     if (!teamMembersStore[teamId]) {
       teamMembersStore[teamId] = [];
     }
-    teamMembersStore[teamId] = [newMembership, ...teamMembersStore[teamId]];
 
+    let memberUser: WorkspaceUser;
+    let finalUserId: string;
+
+    if (body.userId) {
+      // 1. Existing Workspace User being added or role updated
+      finalUserId = body.userId;
+      const foundInWorkspace = DEMO_WORKSPACE_USERS.find((u) => u.id === body.userId);
+      const foundInUsers = Object.values(DEMO_USERS).find((u) => u.id === body.userId);
+      const foundInTeam = teamMembersStore[teamId].find((m) => m.userId === body.userId)?.user;
+
+      if (!foundInWorkspace && !foundInUsers && !foundInTeam) {
+        throw new ApiError(404, 'User not found in workspace.');
+      }
+
+      memberUser = foundInWorkspace || (foundInUsers ? { id: foundInUsers.id, fullName: foundInUsers.fullName, email: foundInUsers.email, avatarUrl: foundInUsers.avatarUrl } : foundInTeam!);
+    } else {
+      // 2. Inviting brand new person by email
+      const email = (body.email || '').toLowerCase().trim();
+      if (!email || !email.includes('@')) {
+        throw new ApiError(400, 'Valid email address is required.');
+      }
+
+      // Check if user already exists
+      Object.assign(DEMO_USERS, getStoredUsers());
+      const existingUser = DEMO_USERS[email];
+      if (existingUser) {
+        if (body.fullName?.trim()) {
+          existingUser.fullName = body.fullName.trim();
+          saveStoredUser(email, existingUser);
+        }
+        finalUserId = existingUser.id;
+        memberUser = {
+          id: existingUser.id,
+          fullName: existingUser.fullName,
+          email: existingUser.email,
+          avatarUrl: existingUser.avatarUrl,
+        };
+      } else {
+        finalUserId = `usr-${Date.now()}`;
+        const fullName = body.fullName?.trim() || email.split('@')[0];
+        memberUser = {
+          id: finalUserId,
+          fullName,
+          email,
+          avatarUrl: undefined,
+        };
+        const newUserObj: User = {
+          id: finalUserId,
+          email,
+          fullName,
+          memberships: [{ teamId, teamName: targetTeam.name, teamSlug: targetTeam.slug, role: (body.role || 'MEMBER') as TeamRole }],
+        };
+        DEMO_USERS[email] = newUserObj;
+        saveStoredUser(email, newUserObj);
+        saveStoredPassword(email, 'Password123!');
+      }
+
+      const existingWsIdx = DEMO_WORKSPACE_USERS.findIndex((u) => u.id === finalUserId);
+      if (existingWsIdx >= 0) {
+        DEMO_WORKSPACE_USERS[existingWsIdx] = memberUser;
+      } else {
+        DEMO_WORKSPACE_USERS.push(memberUser);
+      }
+    }
+
+    // Check if user is ALREADY a member of this team
+    const existingIndex = teamMembersStore[teamId].findIndex((m) => m.userId === finalUserId);
+    let resultMembership: TeamMember;
+
+    if (existingIndex >= 0) {
+      // UPDATE existing membership role
+      teamMembersStore[teamId][existingIndex].role = (body.role || 'MEMBER') as TeamRole;
+      resultMembership = teamMembersStore[teamId][existingIndex];
+    } else {
+      // ADD new membership
+      resultMembership = {
+        id: `mem-${finalUserId}-${teamId}`,
+        userId: finalUserId,
+        teamId,
+        role: (body.role || 'MEMBER') as TeamRole,
+        createdAt: new Date().toISOString(),
+        user: memberUser,
+      };
+      teamMembersStore[teamId] = [resultMembership, ...teamMembersStore[teamId]];
+    }
+
+    // Save updated team members to persistent storage
+    saveStoredTeamMembers(teamMembersStore);
+
+    // Update team count
+    if (targetTeam && targetTeam._count) {
+      targetTeam._count.memberships = teamMembersStore[teamId].length;
+    }
+
+    // Also update user's memberships in DEMO_USERS
+    const userEmail = memberUser.email.toLowerCase().trim();
+    if (DEMO_USERS[userEmail]) {
+      const u = DEMO_USERS[userEmail];
+      const memIndex = u.memberships.findIndex((m) => m.teamId === teamId);
+      if (memIndex >= 0) {
+        u.memberships[memIndex].role = resultMembership.role;
+      } else {
+        u.memberships.push({
+          teamId,
+          teamName: targetTeam.name,
+          teamSlug: targetTeam.slug,
+          role: resultMembership.role,
+        });
+      }
+      saveStoredUser(userEmail, u);
+    }
+
+    const inviteToken = createDemoInviteToken({
+      email: memberUser.email,
+      fullName: memberUser.fullName,
+      role: resultMembership.role,
+      teamId,
+      inviterName: currentDemoUser.fullName,
+    });
+    const baseOrigin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://newtonite-ops-blue.vercel.app';
+    const inviteUrl = `${baseOrigin}/accept-invite?token=${inviteToken}`;
+    const emailInviteUrl = baseOrigin.includes('localhost')
+      ? `https://newtonite-ops-blue.vercel.app/accept-invite?token=${inviteToken}`
+      : inviteUrl;
+
+    // Dispatch real email to Gmail inbox via Vercel serverless function
+    if (body.email && !body.email.endsWith('@newtonite.io')) {
+      fetch('/api/send-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: body.email,
+          fullName: memberUser.fullName,
+          teamName: targetTeam?.name || 'Operational Team',
+          role: resultMembership.role,
+          inviteUrl: emailInviteUrl,
+          inviterName: currentDemoUser.fullName,
+        }),
+      })
+        .then(async (res) => {
+          const json = await res.json().catch(() => ({}));
+          console.log('[Vercel Email Dispatch]:', json);
+        })
+        .catch((err) => {
+          console.warn('[Vercel Email Dispatch Failed]:', err);
+        });
+    }
+
+    return {
+      success: true,
+      membership: resultMembership,
+      inviteUrl,
+      message: `User "${memberUser.fullName}" successfully updated in ${targetTeam.name}!`,
+    } as T;
+  }
+
+  // 7b. Teams: Remove Member
+  const teamMemberDeleteMatch = pathname.match(/^\/api\/teams\/([^/]+)\/members\/([^/]+)$/);
+  if (teamMemberDeleteMatch && method === 'DELETE') {
+    const teamId = teamMemberDeleteMatch[1];
+    const userId = teamMemberDeleteMatch[2];
+
+    teamMembersStore = getStoredTeamMembers();
+    if (!teamMembersStore[teamId]) {
+      teamMembersStore[teamId] = [];
+    }
+
+    const memberToDelete = teamMembersStore[teamId].find((m) => m.userId === userId);
+    if (!memberToDelete) {
+      throw new ApiError(404, 'Member not found in team.');
+    }
+
+    // RBAC Guard: Cannot remove the last remaining ADMIN of the team
+    if (memberToDelete.role === 'ADMIN') {
+      const adminCount = teamMembersStore[teamId].filter((m) => m.role === 'ADMIN').length;
+      if (adminCount <= 1) {
+        throw new ApiError(400, 'Cannot remove the last remaining ADMIN of the team.');
+      }
+    }
+
+    // Remove member from team
+    teamMembersStore[teamId] = teamMembersStore[teamId].filter((m) => m.userId !== userId);
+    saveStoredTeamMembers(teamMembersStore);
+
+    // Update team count
     const targetTeam = teamsStore.find((t) => t.id === teamId);
     if (targetTeam && targetTeam._count) {
       targetTeam._count.memberships = teamMembersStore[teamId].length;
     }
 
+    // Also remove team membership from DEMO_USERS
+    const userEmail = memberToDelete.user?.email?.toLowerCase().trim();
+    if (userEmail && DEMO_USERS[userEmail]) {
+      DEMO_USERS[userEmail].memberships = DEMO_USERS[userEmail].memberships.filter(
+        (m) => m.teamId !== teamId
+      );
+      saveStoredUser(userEmail, DEMO_USERS[userEmail]);
+    }
+
     return {
       success: true,
-      membership: newMembership,
-      inviteUrl: `https://newtonite-ops-blue.vercel.app/accept-invite?token=demo-token-${Date.now()}`,
-      message: `User "${newMember.fullName}" invited and added to team!`,
+      message: `Member ${memberToDelete.user?.fullName || userId} removed from team.`,
     } as T;
   }
 

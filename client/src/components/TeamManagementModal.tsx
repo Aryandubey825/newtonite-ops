@@ -209,6 +209,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
         await loadTeamMembers(targetTeamId);
         await loadWorkspaceUsers();
+        await refreshTeams();
         if (res.inviteUrl) {
           setLastInviteUrl(res.inviteUrl);
         }
@@ -277,6 +278,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       });
 
       await loadTeamMembers(targetTeamId);
+      await loadWorkspaceUsers();
       await refreshTeams();
       setSuccessMsg(`Member ${memberName} removed from team.`);
     } catch (err: any) {
@@ -623,7 +625,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                             required
                             value={newMemberName}
                             onChange={(e) => setNewMemberName(e.target.value)}
-                            placeholder="e.g. Aryan Verma"
+                            placeholder="e.g. Alex Morgan"
                             className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
@@ -637,7 +639,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                             required
                             value={newMemberEmail}
                             onChange={(e) => setNewMemberEmail(e.target.value)}
-                            placeholder="e.g. aryan@newtonite.io"
+                            placeholder="e.g. alex@example.com"
                             className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
@@ -739,18 +741,18 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           <Mail className="w-4 h-4 text-blue-600" />
                           <span>
                             {lastInviteUrl.includes('demo-token')
-                              ? 'Demo Invitation Link Ready (In-Browser Preview)'
+                              ? 'Gmail Invitation Sent & Link Ready'
                               : 'Invitation Email Dispatched via Outbox Worker'}
                           </span>
                         </div>
                         <span className="text-[10px] font-mono font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                          {lastInviteUrl.includes('demo-token') ? 'Instant Preview' : 'Valid for 7 days'}
+                          {lastInviteUrl.includes('demo-token') ? 'Email Dispatched' : 'Valid for 7 days'}
                         </span>
                       </div>
 
                       <p className="text-[11px] text-blue-800 leading-relaxed">
                         {lastInviteUrl.includes('demo-token')
-                          ? 'Vercel Preview Mode: Invitation link is generated directly in the browser so you can test password setup immediately with "Open Link". (Real Gmail SMTP delivery runs automatically when inviting from localhost:3000).'
+                          ? 'Real Gmail Invitation Dispatched! An invitation email has been sent via Vercel Cloud Serverless to the recipient\'s inbox (check inbox/spam). You can also test immediately with "Open Link" below:'
                           : 'An invitation email has been scheduled and dispatched via Gmail SMTP. The member can also click the link below to set their password and enter the workspace:'}
                       </p>
 

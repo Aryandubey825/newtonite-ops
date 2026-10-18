@@ -3,10 +3,14 @@
   "framework": "vite",
   "buildCommand": "cd client && npm run build",
   "outputDirectory": "client/dist",
-  "installCommand": "cd client && npm install",
+  "installCommand": "npm install && cd client && npm install",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/send-invite",
+      "destination": "/api/send-invite.js"
+    },
+    {
+      "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
   ]
