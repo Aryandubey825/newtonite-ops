@@ -737,15 +737,21 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2 text-xs font-bold text-blue-900">
                           <Mail className="w-4 h-4 text-blue-600" />
-                          <span>Invitation Email Queued via Outbox Worker</span>
+                          <span>
+                            {lastInviteUrl.includes('demo-token')
+                              ? 'Demo Invitation Link Ready (In-Browser Preview)'
+                              : 'Invitation Email Dispatched via Outbox Worker'}
+                          </span>
                         </div>
                         <span className="text-[10px] font-mono font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                          Valid for 7 days
+                          {lastInviteUrl.includes('demo-token') ? 'Instant Preview' : 'Valid for 7 days'}
                         </span>
                       </div>
 
                       <p className="text-[11px] text-blue-800 leading-relaxed">
-                        An invitation email has been scheduled for delivery. The member can click the link below to set their password and enter the workspace:
+                        {lastInviteUrl.includes('demo-token')
+                          ? 'Vercel Preview Mode: Invitation link is generated directly in the browser so you can test password setup immediately with "Open Link". (Real Gmail SMTP delivery runs automatically when inviting from localhost:3000).'
+                          : 'An invitation email has been scheduled and dispatched via Gmail SMTP. The member can also click the link below to set their password and enter the workspace:'}
                       </p>
 
                       <div className="flex items-center gap-2">
