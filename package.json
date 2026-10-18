@@ -1,5 +1,5 @@
 {
-  "name": "operations-under-pressure",
+  "name": "newtonite-ops-23131010576",
   "version": "1.0.0",
   "private": true,
   "description": "Newtonite Operations Under Pressure - High-Integrity Operational Work Item Platform",
@@ -27,6 +27,6 @@
     "transactional-outbox",
     "newtonite"
   ],
-  "author": "Newtonite Candidate",
+  "author": "Aryan Dubey (23131010576)",
   "license": "ISC"
 }

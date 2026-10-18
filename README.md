@@ -1,9 +1,10 @@
 # Operations Under Pressure ⚡
 **Newtonite Software Engineering Challenge — High-Integrity Operational Work Item Platform**  
 *Galgotias University • Corporate Central and Industrial Outreach (CCIO)*  
-*Track: Software Engineering (Full-Stack)*
+**Candidate:** Aryan Dubey | **Roll No:** `23131010576` | **Track:** Software Engineering (Full-Stack)  
+**Repository:** `newtonite-ops-23131010576`
 
-[![CI Tests](https://img.shields.io/badge/Vitest-23%20Passed-emerald.svg)](https://github.com/Aryandubey825/newtonite-ops)
+[![CI Tests](https://img.shields.io/badge/Vitest-23%20Passed-emerald.svg)](https://github.com/Aryandubey825/newtonite-ops-23131010576)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Live Preview](https://img.shields.io/badge/Live%20Demo-Vercel%20Active-0070f3.svg)](https://newtonite-ops-blue.vercel.app)
 

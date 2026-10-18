@@ -1,5 +1,7 @@
 # Engineering Decisions & Architectural Trade-offs
 **Challenge:** Newtonite Software Engineering Challenge — *Operations Under Pressure*  
+**Candidate:** Aryan Dubey | **Roll No:** `23131010576`  
+**Institution:** Galgotias University (SCSE — B.Tech CSE)  
 **System:** High-Integrity Cross-Team Operational Work Item Platform  
 
 ---
