@@ -267,6 +267,123 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
 let workItemsStore: WorkItem[] = [...INITIAL_WORK_ITEMS];
 let teamsStore: Team[] = [...DEMO_TEAMS];
 
+const INITIAL_TEAM_MEMBERS: Record<string, TeamMember[]> = {
+  'team-secops': [
+    {
+      id: 'mem-admin-secops',
+      userId: 'usr-admin',
+      teamId: 'team-secops',
+      role: 'ADMIN',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[0],
+    },
+    {
+      id: 'mem-sarah-secops',
+      userId: 'usr-lead-secops',
+      teamId: 'team-secops',
+      role: 'LEAD',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[1],
+    },
+    {
+      id: 'mem-john-secops',
+      userId: 'usr-member-secops',
+      teamId: 'team-secops',
+      role: 'MEMBER',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[2],
+    },
+    {
+      id: 'mem-marcus-secops',
+      userId: 'usr-viewer-secops',
+      teamId: 'team-secops',
+      role: 'VIEWER',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[3],
+    },
+  ],
+  'team-payments': [
+    {
+      id: 'mem-admin-payments',
+      userId: 'usr-admin',
+      teamId: 'team-payments',
+      role: 'ADMIN',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[0],
+    },
+    {
+      id: 'mem-rachel-payments',
+      userId: 'usr-lead-payments',
+      teamId: 'team-payments',
+      role: 'LEAD',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[4],
+    },
+    {
+      id: 'mem-mike-payments',
+      userId: 'usr-member-payments',
+      teamId: 'team-payments',
+      role: 'MEMBER',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[5],
+    },
+  ],
+  'team-infra': [
+    {
+      id: 'mem-admin-infra',
+      userId: 'usr-admin',
+      teamId: 'team-infra',
+      role: 'ADMIN',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[0],
+    },
+    {
+      id: 'mem-gordon-infra',
+      userId: 'usr-lead-infra',
+      teamId: 'team-infra',
+      role: 'LEAD',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[6],
+    },
+    {
+      id: 'mem-alyx-infra',
+      userId: 'usr-member-infra',
+      teamId: 'team-infra',
+      role: 'MEMBER',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[7],
+    },
+  ],
+  'team-compliance': [
+    {
+      id: 'mem-admin-compliance',
+      userId: 'usr-admin',
+      teamId: 'team-compliance',
+      role: 'ADMIN',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[0],
+    },
+    {
+      id: 'mem-donna-compliance',
+      userId: 'usr-lead-compliance',
+      teamId: 'team-compliance',
+      role: 'LEAD',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[8],
+    },
+    {
+      id: 'mem-harvey-compliance',
+      userId: 'usr-member-compliance',
+      teamId: 'team-compliance',
+      role: 'MEMBER',
+      createdAt: '2026-10-18T00:00:00.000Z',
+      user: DEMO_WORKSPACE_USERS[9],
+    },
+  ],
+};
+
+let teamMembersStore: Record<string, TeamMember[]> = { ...INITIAL_TEAM_MEMBERS };
+
 export function handleDemoRequest<T = any>(endpoint: string, options: RequestInit = {}): T {
   const method = (options.method || 'GET').toUpperCase();
   const urlObj = new URL(endpoint, 'http://localhost');
@@ -296,6 +413,33 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
     return { user: currentDemoUser } as T;
   }
 
+  // 2b. Auth: Invite Info
+  if (pathname === '/api/auth/invite-info' && method === 'GET') {
+    return {
+      email: 'aryandubey825@gmail.com',
+      fullName: 'Aryan Dubey',
+      role: 'MEMBER' as TeamRole,
+      team: { id: 'team-secops', name: 'SecOps & Incident Response', slug: 'secops' },
+      inviterName: 'Alex Mercer (Global Admin)',
+    } as T;
+  }
+
+  // 2c. Auth: Accept Invite
+  if (pathname === '/api/auth/accept-invite' && method === 'POST') {
+    const body = options.body ? JSON.parse(options.body as string) : {};
+    const acceptedUser: User = {
+      id: `usr-${Date.now()}`,
+      email: 'aryandubey825@gmail.com',
+      fullName: body.fullName || 'Aryan Dubey',
+      memberships: [{ teamId: 'team-secops', teamName: 'SecOps & Incident Response', teamSlug: 'secops', role: 'MEMBER' as TeamRole }],
+    };
+    currentDemoUser = acceptedUser;
+    return {
+      token: `demo-jwt-token-${acceptedUser.id}`,
+      user: acceptedUser,
+    } as T;
+  }
+
   // 3. Teams: List
   if (pathname === '/api/teams' && method === 'GET') {
     return {
@@ -315,6 +459,20 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
       _count: { workItems: 0, memberships: 1 },
     };
     teamsStore = [newTeam, ...teamsStore];
+    teamMembersStore[newTeam.id] = [
+      {
+        id: `mem-${currentDemoUser.id}-${newTeam.id}`,
+        userId: currentDemoUser.id,
+        teamId: newTeam.id,
+        role: 'ADMIN' as TeamRole,
+        createdAt: new Date().toISOString(),
+        user: {
+          id: currentDemoUser.id,
+          fullName: currentDemoUser.fullName,
+          email: currentDemoUser.email,
+        },
+      },
+    ];
     return { team: newTeam } as T;
   }
 
@@ -327,29 +485,50 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   const teamMembersMatch = pathname.match(/^\/api\/teams\/([^/]+)\/members$/);
   if (teamMembersMatch && method === 'GET') {
     const teamId = teamMembersMatch[1];
-    const members: TeamMember[] = DEMO_WORKSPACE_USERS.slice(0, 4).map((u, idx) => ({
-      id: `mem-${u.id}-${teamId}`,
-      userId: u.id,
-      teamId,
-      role: (idx === 0 ? 'ADMIN' : idx === 1 ? 'LEAD' : 'MEMBER') as TeamRole,
-      createdAt: new Date().toISOString(),
-      user: {
-        id: u.id,
-        fullName: u.fullName,
-        email: u.email,
-        avatarUrl: u.avatarUrl,
-      },
-    }));
+    const members = teamMembersStore[teamId] || teamMembersStore['team-secops'] || [];
     return { members } as T;
   }
 
   // 7. Teams: Add Member
   if (teamMembersMatch && method === 'POST') {
+    const teamId = teamMembersMatch[1];
     const body = options.body ? JSON.parse(options.body as string) : {};
+    const newMemberId = body.userId || `usr-${Date.now()}`;
+    const newMember: WorkspaceUser = {
+      id: newMemberId,
+      fullName: body.fullName || (body.email ? body.email.split('@')[0] : 'New Member'),
+      email: body.email || 'newmember@newtonite.io',
+      avatarUrl: undefined,
+    };
+
+    if (!DEMO_WORKSPACE_USERS.some((u) => u.id === newMemberId)) {
+      DEMO_WORKSPACE_USERS.push(newMember);
+    }
+
+    const newMembership: TeamMember = {
+      id: `mem-${newMemberId}-${teamId}`,
+      userId: newMemberId,
+      teamId,
+      role: (body.role || 'MEMBER') as TeamRole,
+      createdAt: new Date().toISOString(),
+      user: newMember,
+    };
+
+    if (!teamMembersStore[teamId]) {
+      teamMembersStore[teamId] = [];
+    }
+    teamMembersStore[teamId] = [newMembership, ...teamMembersStore[teamId]];
+
+    const targetTeam = teamsStore.find((t) => t.id === teamId);
+    if (targetTeam && targetTeam._count) {
+      targetTeam._count.memberships = teamMembersStore[teamId].length;
+    }
+
     return {
       success: true,
+      membership: newMembership,
       inviteUrl: `https://newtonite-ops-blue.vercel.app/accept-invite?token=demo-token-${Date.now()}`,
-      message: `Invitation generated for ${body.email || 'new member'}`,
+      message: `User "${newMember.fullName}" invited and added to team!`,
     } as T;
   }
 

@@ -209,11 +209,13 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
         await loadTeamMembers(targetTeamId);
         await loadWorkspaceUsers();
-        await refreshTeams();
         if (res.inviteUrl) {
           setLastInviteUrl(res.inviteUrl);
         }
-        setSuccessMsg(`User "${res.membership.user.fullName}" (${res.membership.user.email}) invited and added as ${selectedRole}!`);
+        const userName = res.membership?.user?.fullName || fullName || email;
+        const userEmail = res.membership?.user?.email || email;
+        setSuccessMsg(`User "${userName}" (${userEmail}) invited and added as ${selectedRole}!`);
+        setErrorMsg(null);
         setNewMemberName('');
         setNewMemberEmail('');
       } else {
@@ -827,26 +829,26 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-2.5">
                               <div className="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                                {m.user.avatarUrl ? (
+                                {m.user?.avatarUrl ? (
                                   <img
                                     src={m.user.avatarUrl}
-                                    alt={m.user.fullName}
+                                    alt={m.user?.fullName || 'User'}
                                     className="w-full h-full rounded-full object-cover"
                                   />
                                 ) : (
-                                  m.user.fullName.charAt(0)
+                                  (m.user?.fullName || 'U').charAt(0).toUpperCase()
                                 )}
                               </div>
                               <div>
                                 <div className="font-semibold text-slate-900 flex items-center space-x-1.5">
-                                  <span>{m.user.fullName}</span>
+                                  <span>{m.user?.fullName || 'Workspace Member'}</span>
                                   {m.userId === user?.id && (
                                     <span className="text-[10px] font-normal text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
                                       you
                                     </span>
                                   )}
                                 </div>
-                                <div className="text-[11px] text-slate-500">{m.user.email}</div>
+                                <div className="text-[11px] text-slate-500">{m.user?.email || ''}</div>
                               </div>
                             </div>
                           </td>
