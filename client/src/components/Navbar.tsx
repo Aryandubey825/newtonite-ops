@@ -1,18 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAuth, DEMO_ACCOUNTS } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import {
   ChevronDown,
   Check,
-  RefreshCw,
-  LogIn,
   UserPlus,
   Plus,
   LogOut,
 } from 'lucide-react';
 import { TeamManagementModal } from './TeamManagementModal';
-import { LoginModal } from './LoginModal';
-import { WorkspaceUser } from '../types';
-import { apiRequest } from '../api/client';
 
 export const Navbar: React.FC = () => {
   const {
@@ -21,20 +16,16 @@ export const Navbar: React.FC = () => {
     totalWorkspaceUsers,
     selectedTeamId,
     setSelectedTeamId,
-    switchDemoUser,
     logout,
-    isLoading,
   } = useAuth();
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
-  const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState<'teams' | 'members'>('teams');
   const [modalMemberMode, setModalMemberMode] = useState<'existing' | 'new'>('existing');
-  const [workspaceUsers, setWorkspaceUsers] = useState<WorkspaceUser[]>([]);
 
   const workspaceDropdownRef = useRef<HTMLDivElement>(null);
-  const personaDropdownRef = useRef<HTMLDivElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   const activeMembership = user?.memberships.find(
     (m) => (selectedTeamId ? m.teamId === selectedTeamId : true)
@@ -50,26 +41,15 @@ export const Navbar: React.FC = () => {
         setWorkspaceDropdownOpen(false);
       }
       if (
-        personaDropdownRef.current &&
-        !personaDropdownRef.current.contains(event.target as Node)
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
       ) {
-        setPersonaDropdownOpen(false);
+        setProfileDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Fetch workspace users on mount and when persona dropdown opens
-  useEffect(() => {
-    apiRequest<{ users: WorkspaceUser[] }>('/api/teams/users/all')
-      .then((res) => setWorkspaceUsers(res.users))
-      .catch(() => {});
-  }, [personaDropdownOpen, teams]);
-
-  const customUsers = workspaceUsers.filter(
-    (wu) => !DEMO_ACCOUNTS.some((da) => da.email.toLowerCase() === wu.email.toLowerCase())
-  );
 
   // Active workspace / team details
   const activeTeam = teams.find((t) => t.id === selectedTeamId);
@@ -77,7 +57,7 @@ export const Navbar: React.FC = () => {
   const currentInitial = currentWorkspaceName.charAt(0).toUpperCase();
   const currentMemberCount = activeTeam
     ? (activeTeam._count?.memberships ?? 1)
-    : (totalWorkspaceUsers || (workspaceUsers.length > 0 ? workspaceUsers.length : 11));
+    : (totalWorkspaceUsers || 11);
   const currentRole =
     activeMembership?.role ||
     (user?.memberships.some((m) => m.role === 'ADMIN') ? 'ADMIN' : 'MEMBER');
@@ -235,142 +215,122 @@ export const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* Right: 1-Click Role & Persona Switcher */}
-        <div className="relative" ref={personaDropdownRef}>
+        {/* Right: Clean User Profile Menu */}
+        <div className="relative" ref={profileDropdownRef}>
           <button
-            onClick={() => setPersonaDropdownOpen(!personaDropdownOpen)}
-            className="flex items-center space-x-2 bg-white hover:bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-md shadow-2xs transition-colors cursor-pointer"
+            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+            className="flex items-center space-x-2 bg-white hover:bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg shadow-2xs transition-colors cursor-pointer group"
           >
-            <div className="w-5 h-5 rounded bg-slate-800 flex items-center justify-center font-bold text-[10px] text-white">
-              {user?.fullName.charAt(0) || 'U'}
-            </div>
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.fullName}
+                className="w-6 h-6 rounded-full object-cover border border-slate-200"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-[11px] text-white shadow-2xs">
+                {user?.fullName.charAt(0) || 'U'}
+              </div>
+            )}
             <div className="text-left hidden sm:block">
-              <div className="text-xs font-semibold text-slate-900">{user?.fullName || 'User'}</div>
-              <div className="text-[10px] text-slate-500 flex items-center space-x-1">
-                <span className="font-medium text-blue-600">
-                  {activeMembership?.role || 'OPERATOR'}
+              <div className="text-xs font-semibold text-slate-900 group-hover:text-slate-950">
+                {user?.fullName || 'User'}
+              </div>
+              <div className="text-[10px] font-medium text-slate-500 flex items-center gap-1">
+                <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold ${
+                  currentRole === 'ADMIN'
+                    ? 'bg-purple-100 text-purple-800'
+                    : currentRole === 'LEAD'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {currentRole}
                 </span>
-                <span>• Switch Role</span>
               </div>
             </div>
-            <ChevronDown className="w-3 h-3 text-slate-400" />
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform ${
+                profileDropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
 
-          {/* Persona Switcher Dropdown */}
-          {personaDropdownOpen && (
-            <div className="absolute right-0 mt-1.5 w-80 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-              <div className="px-3.5 py-1.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                <span>Switch Demo Persona</span>
-                <span className="flex items-center text-slate-400 gap-1 font-normal lowercase text-[10px]">
-                  <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-                  instant RBAC test
-                </span>
-              </div>
-
-              <div className="p-1.5 space-y-1">
-                {DEMO_ACCOUNTS.map((acc) => {
-                  const isActive = user?.email.toLowerCase() === acc.email.toLowerCase();
-                  return (
-                    <button
-                      key={acc.email}
-                      onClick={() => {
-                        switchDemoUser(acc.email);
-                        setPersonaDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs flex items-center justify-between transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 border border-blue-200 text-blue-900 font-medium'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="w-5 h-5 rounded bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold">
-                          {acc.label.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-medium text-slate-900 flex items-center gap-1.5">
-                            <span>{acc.label}</span>
-                            {isActive && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                          </div>
-                          <div className="text-[10px] text-slate-500">{acc.team}</div>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border ${
-                          acc.role === 'ADMIN'
-                            ? 'bg-purple-50 text-purple-700 border-purple-200'
-                            : acc.role === 'LEAD'
-                            ? 'bg-amber-50 text-amber-800 border-amber-200'
-                            : acc.role === 'MEMBER'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : 'bg-slate-50 text-slate-600 border-slate-200'
-                        }`}
-                      >
-                        {acc.role}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Custom / Registered Workspace Users */}
-              {customUsers.length > 0 && (
-                <div className="p-1.5 pt-1 border-t border-slate-100 space-y-1">
-                  <div className="px-2 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    Custom Workspace Users ({customUsers.length})
+          {/* User Profile Dropdown */}
+          {profileDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+              {/* User Identity Header */}
+              <div className="px-4 py-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.fullName}
+                      className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-2xs">
+                      {user?.fullName.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  <div className="truncate">
+                    <div className="text-xs font-bold text-slate-900 truncate">
+                      {user?.fullName}
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      {user?.email}
+                    </div>
                   </div>
-                  {customUsers.map((u) => {
-                    const isActive = user?.email.toLowerCase() === u.email.toLowerCase();
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          switchDemoUser(u.email);
-                          setPersonaDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs flex items-center justify-between transition-colors ${
-                          isActive
-                            ? 'bg-blue-50 border border-blue-200 text-blue-900 font-medium'
-                            : 'hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2 truncate">
-                          <div className="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                            {u.fullName.charAt(0)}
-                          </div>
-                          <div className="truncate">
-                            <div className="font-medium text-slate-900 flex items-center gap-1 truncate">
-                              <span className="truncate">{u.fullName}</span>
-                              {isActive && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
-                            </div>
-                            <div className="text-[10px] text-slate-500 truncate">{u.email}</div>
-                          </div>
-                        </div>
+                </div>
 
-                        <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                          CUSTOM
+                <div className="mt-2.5 flex items-center gap-1.5">
+                  <span className="text-[10px] text-slate-500">Workspace Role:</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                    currentRole === 'ADMIN'
+                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                      : currentRole === 'LEAD'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                      : 'bg-blue-50 text-blue-700 border-blue-200'
+                  }`}>
+                    {currentRole}
+                  </span>
+                </div>
+              </div>
+
+              {/* Team Memberships Summary */}
+              {user?.memberships && user.memberships.length > 0 && (
+                <div className="px-4 py-2.5 border-b border-slate-100">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Assigned Teams ({user.memberships.length})
+                  </div>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {user.memberships.map((m) => (
+                      <div
+                        key={m.teamId}
+                        className="flex items-center justify-between text-xs py-1 px-1.5 rounded hover:bg-slate-50"
+                      >
+                        <span className="text-slate-700 truncate">{m.teamName}</span>
+                        <span className="text-[10px] font-mono text-slate-500 shrink-0 ml-2">
+                          {m.role}
                         </span>
-                      </button>
-                    );
-                  })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Sign In with Custom Email & Password */}
-              <div className="p-2 border-t border-slate-100">
+              {/* Sign Out Action */}
+              <div className="pt-1.5 px-2">
                 <button
                   onClick={() => {
-                    setPersonaDropdownOpen(false);
-                    setIsLoginModalOpen(true);
+                    setProfileDropdownOpen(false);
+                    logout();
                   }}
-                  className="w-full text-center py-1.5 px-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50/70 rounded-md border border-dashed border-blue-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Sign In with Email & Password</span>
+                  <LogOut className="w-4 h-4 text-rose-500" />
+                  <span>Sign out</span>
                 </button>
               </div>
-
             </div>
           )}
         </div>
@@ -384,12 +344,6 @@ export const Navbar: React.FC = () => {
         initialTeamId={selectedTeamId}
         initialTab={modalTab}
         initialMemberMode={modalMemberMode}
-      />
-
-      {/* Login with Email & Password Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
       />
     </header>
   );

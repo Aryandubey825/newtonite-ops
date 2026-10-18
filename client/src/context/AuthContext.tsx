@@ -46,7 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       setAuthToken(null);
       setUser(null);
-      await switchDemoUser('admin@newtonite.io').catch(() => {});
     } finally {
       setIsLoading(false);
     }
