@@ -102,7 +102,6 @@ For rapid evaluation, the **Login Screen** features **1-Click Quick Demo Login**
 | Role Tier | Full Name | Email Address | Team Scope | Key Authorities & RBAC Permissions |
 | :--- | :--- | :--- | :--- | :--- |
 | **Global Admin** | Alex Mercer | `admin@newtonite.io` | **All Teams** (System-wide) | Full override; close/cancel items; approve any item; invite & remove members |
-| **Global Admin** | Aryan Duve | `aryandubey825@gmail.com` | **All Teams** (System-wide) | Candidate evaluation account; full Admin privileges across all teams |
 | **SecOps Lead** | Sarah Connor | `lead.secops@newtonite.io` | SecOps & Incident Response | **Passes Lead Approval Gate** (`AWAITING_APPROVAL -> RESOLVED`); reassigns items |
 | **SecOps Member** | John Reese | `member.secops@newtonite.io` | SecOps & Incident Response | Claims unassigned items; edits title/description; submits item for Lead approval |
 | **SecOps Viewer** | Marcus Wright | `viewer.secops@newtonite.io` | SecOps & Incident Response | Read-only inspection of work items, metrics, and audit timeline (mutations blocked) |
