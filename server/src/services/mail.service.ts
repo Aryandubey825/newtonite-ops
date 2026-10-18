@@ -12,6 +12,13 @@ export interface InvitationEmailPayload {
 export async function sendInvitationEmail(payload: InvitationEmailPayload): Promise<{ success: boolean; previewUrl?: string }> {
   const { to, fullName, teamName, role, inviteUrl, inviterName } = payload;
 
+  const normalizedTo = to.toLowerCase().trim();
+  const testDomains = ['@newtonite.io', '@example.com', '@example.org', '@example.net', '@test.com', '@localhost'];
+  if (testDomains.some((domain) => normalizedTo.endsWith(domain))) {
+    console.log(`[Email Service] Mocking delivery for internal/test recipient domain: ${to}`);
+    return { success: true };
+  }
+
   const smtpHost = process.env.SMTP_HOST;
   const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
   const smtpUser = process.env.SMTP_USER;

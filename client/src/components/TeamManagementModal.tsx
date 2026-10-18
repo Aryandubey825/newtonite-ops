@@ -392,63 +392,6 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
           </div>
         )}
 
-        {lastInviteUrl && (
-          <div className="mx-6 mt-3 p-3.5 bg-blue-50/80 border border-blue-200 rounded-lg space-y-2 animate-in fade-in">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-xs font-bold text-blue-900">
-                <Mail className="w-4 h-4 text-blue-600" />
-                <span>Invitation Email Queued via Outbox Worker</span>
-              </div>
-              <span className="text-[10px] font-mono font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                Valid for 7 days
-              </span>
-            </div>
-
-            <p className="text-[11px] text-blue-800 leading-relaxed">
-              An invitation email has been scheduled for delivery. The member can click the link below to set their password and enter the workspace:
-            </p>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={lastInviteUrl}
-                className="w-full px-2.5 py-1 text-[11px] font-mono bg-white border border-blue-200 rounded text-slate-700 select-all focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(lastInviteUrl);
-                  setCopiedInvite(true);
-                  setTimeout(() => setCopiedInvite(false), 2000);
-                }}
-                className="shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-blue-100/60 border border-blue-300 text-blue-700 rounded text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-              >
-                {copiedInvite ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-700">Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Link</span>
-                  </>
-                )}
-              </button>
-              <a
-                href={lastInviteUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-2xs transition-colors"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open Link</span>
-              </a>
-            </div>
-          </div>
-        )}
-
         {/* Content Area */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
           {activeTab === 'teams' ? (
@@ -787,6 +730,64 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                       </div>
                     )}
                   </form>
+
+                  {/* Invitation Link & Outbox Notice (Appears directly below the form) */}
+                  {lastInviteUrl && (
+                    <div className="mt-4 p-3.5 bg-blue-50/90 border border-blue-200 rounded-lg space-y-2 animate-in fade-in">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-xs font-bold text-blue-900">
+                          <Mail className="w-4 h-4 text-blue-600" />
+                          <span>Invitation Email Queued via Outbox Worker</span>
+                        </div>
+                        <span className="text-[10px] font-mono font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                          Valid for 7 days
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-blue-800 leading-relaxed">
+                        An invitation email has been scheduled for delivery. The member can click the link below to set their password and enter the workspace:
+                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={lastInviteUrl}
+                          className="w-full px-2.5 py-1 text-[11px] font-mono bg-white border border-blue-200 rounded text-slate-700 select-all focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(lastInviteUrl);
+                            setCopiedInvite(true);
+                            setTimeout(() => setCopiedInvite(false), 2000);
+                          }}
+                          className="shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-blue-100/60 border border-blue-300 text-blue-700 rounded text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                        >
+                          {copiedInvite ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="text-emerald-700">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy Link</span>
+                            </>
+                          )}
+                        </button>
+                        <a
+                          href={lastInviteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-2xs transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Open Link</span>
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2.5 text-xs text-amber-800">

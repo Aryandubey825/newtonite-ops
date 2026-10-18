@@ -70,16 +70,16 @@ export async function apiRequest<T = any>(
       headers,
     });
 
-    if (response.ok) {
-      return response.json();
-    }
-
-    // If 404/405 or HTML returned (Vercel static host with no backend), switch to demo store!
+    // If 404/405 or HTML returned (Vercel static host with SPA rewrite), switch to demo store!
     const contentType = response.headers.get('content-type') || '';
     if (response.status === 404 || response.status === 405 || contentType.includes('text/html')) {
-      console.warn(`[Newtonite API] Endpoint ${endpoint} returned ${response.status}. Switching to Smart Demo Store for Vercel preview.`);
+      console.warn(`[Newtonite API] Endpoint ${endpoint} returned ${response.status} (${contentType}). Switching to Smart Demo Store for Vercel preview.`);
       isDemoModeActive = true;
       return handleDemoRequest<T>(endpoint, options);
+    }
+
+    if (response.ok) {
+      return await response.json();
     }
 
     let errData: any = {};
