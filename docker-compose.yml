@@ -30,6 +30,7 @@ services:
       PORT: 4000
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-newtonite_ops}?schema=public
       JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-newtonite-operations-2026}
+      APP_BASE_URL: ${APP_BASE_URL:-https://newtonite-ops-blue.vercel.app}
     ports:
       - "4000:4000"
     depends_on:

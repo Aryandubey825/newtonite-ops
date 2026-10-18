@@ -415,23 +415,90 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
 
   // 2b. Auth: Invite Info
   if (pathname === '/api/auth/invite-info' && method === 'GET') {
+    const token = searchParams.get('token') || '';
+    let email = 'aryandubey825@gmail.com';
+    let fullName = 'Aryan Dubey';
+    let role: TeamRole = 'MEMBER';
+    let team = { id: 'team-secops', name: 'SecOps & Incident Response', slug: 'secops' };
+    let inviterName = 'Alex Mercer (Global Admin)';
+
+    if (token && token.includes('.')) {
+      try {
+        const payloadBase64 = token.split('.')[1];
+        const normalizedBase64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonStr = decodeURIComponent(
+          atob(normalizedBase64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const decoded = JSON.parse(jsonStr);
+        if (decoded.email) email = decoded.email;
+        if (decoded.fullName) fullName = decoded.fullName;
+        if (decoded.role) role = decoded.role as TeamRole;
+        if (decoded.inviterName) inviterName = decoded.inviterName;
+        if (decoded.teamId) {
+          const matchedTeam = teamsStore.find((t) => t.id === decoded.teamId);
+          if (matchedTeam) {
+            team = { id: matchedTeam.id, name: matchedTeam.name, slug: matchedTeam.slug };
+          }
+        }
+      } catch (err) {
+        console.warn('Could not decode JWT payload in demo store:', err);
+      }
+    }
+
     return {
-      email: 'aryandubey825@gmail.com',
-      fullName: 'Aryan Dubey',
-      role: 'MEMBER' as TeamRole,
-      team: { id: 'team-secops', name: 'SecOps & Incident Response', slug: 'secops' },
-      inviterName: 'Alex Mercer (Global Admin)',
+      email,
+      fullName,
+      role,
+      team,
+      inviterName,
     } as T;
   }
 
   // 2c. Auth: Accept Invite
   if (pathname === '/api/auth/accept-invite' && method === 'POST') {
     const body = options.body ? JSON.parse(options.body as string) : {};
+    let email = 'aryandubey825@gmail.com';
+    let fullName = body.fullName || 'Aryan Dubey';
+    let role: TeamRole = 'MEMBER';
+    let teamId = 'team-secops';
+    let teamName = 'SecOps & Incident Response';
+    let teamSlug = 'secops';
+
+    if (body.token && body.token.includes('.')) {
+      try {
+        const payloadBase64 = body.token.split('.')[1];
+        const normalizedBase64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonStr = decodeURIComponent(
+          atob(normalizedBase64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const decoded = JSON.parse(jsonStr);
+        if (decoded.email) email = decoded.email;
+        if (decoded.fullName && !body.fullName) fullName = decoded.fullName;
+        if (decoded.role) role = decoded.role as TeamRole;
+        if (decoded.teamId) {
+          const matchedTeam = teamsStore.find((t) => t.id === decoded.teamId);
+          if (matchedTeam) {
+            teamId = matchedTeam.id;
+            teamName = matchedTeam.name;
+            teamSlug = matchedTeam.slug;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not decode JWT payload in accept-invite demo store:', err);
+      }
+    }
+
     const acceptedUser: User = {
       id: `usr-${Date.now()}`,
-      email: 'aryandubey825@gmail.com',
-      fullName: body.fullName || 'Aryan Dubey',
-      memberships: [{ teamId: 'team-secops', teamName: 'SecOps & Incident Response', teamSlug: 'secops', role: 'MEMBER' as TeamRole }],
+      email,
+      fullName,
+      memberships: [{ teamId, teamName, teamSlug, role }],
     };
     currentDemoUser = acceptedUser;
     return {

@@ -175,7 +175,7 @@ export async function addOrUpdateTeamMember(
       { expiresIn: '7d' }
     );
 
-    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.APP_BASE_URL || 'https://newtonite-ops-blue.vercel.app';
     inviteUrl = `${baseUrl}/accept-invite?token=${inviteToken}`;
 
     // Queue Outbox Job for async email delivery
