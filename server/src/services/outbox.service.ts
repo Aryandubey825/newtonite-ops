@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient, OutboxStatus } from '@prisma/client';
 import { prisma } from '../prisma';
+import { sendInvitationEmail } from './mail.service';
 
 export interface OutboxDispatcher {
   (eventType: string, payload: any): Promise<void>;
@@ -7,6 +8,11 @@ export interface OutboxDispatcher {
 
 // Default mock dispatcher (simulates notifications, emails, webhooks)
 export const defaultDispatcher: OutboxDispatcher = async (eventType: string, payload: any) => {
+  if (eventType === 'INVITATION_EMAIL') {
+    await sendInvitationEmail(payload);
+    return;
+  }
+
   // Simulates external async processing
   if (process.env.NODE_ENV !== 'test') {
     console.log(`[Outbox Worker] Dispatched event: ${eventType}`, JSON.stringify(payload));

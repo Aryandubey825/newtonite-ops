@@ -23,6 +23,8 @@ services:
       dockerfile: Dockerfile
     container_name: newtonite_server
     restart: unless-stopped
+    env_file:
+      - ./server/.env
     environment:
       NODE_ENV: development
       PORT: 4000

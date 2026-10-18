@@ -5,12 +5,14 @@ import { apiRequest, setAuthToken, getAuthToken } from '../api/client';
 interface AuthContextType {
   user: User | null;
   teams: Team[];
+  totalWorkspaceUsers: number;
   selectedTeamId: string | null;
   setSelectedTeamId: (id: string | null) => void;
   isLoading: boolean;
   login: (email: string, passwordPlain: string) => Promise<void>;
   switchDemoUser: (email: string) => Promise<void>;
   logout: () => void;
+  refreshTeams: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +29,7 @@ export const DEMO_ACCOUNTS = [
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [totalWorkspaceUsers, setTotalWorkspaceUsers] = useState<number>(11);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,28 +38,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const meRes = await apiRequest<{ user: User }>('/api/auth/me');
       setUser(meRes.user);
 
-      const teamsRes = await apiRequest<{ teams: Team[] }>('/api/teams');
+      const teamsRes = await apiRequest<{ teams: Team[]; totalWorkspaceUsers?: number }>('/api/teams');
       setTeams(teamsRes.teams);
+      if (teamsRes.totalWorkspaceUsers) {
+        setTotalWorkspaceUsers(teamsRes.totalWorkspaceUsers);
+      }
     } catch (err) {
       setAuthToken(null);
       setUser(null);
+      await switchDemoUser('admin@newtonite.io').catch(() => {});
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (getAuthToken()) {
-      fetchProfileAndTeams();
-    } else {
-      // Auto-login with Sarah Connor (Lead) as default demo experience
-      switchDemoUser('lead.secops@newtonite.io').finally(() => {
+    const isLoggedOut = localStorage.getItem('newtonite_logged_out') === 'true';
+    const token = getAuthToken();
+
+    if (token && !isLoggedOut) {
+      fetchProfileAndTeams().catch(() => {
         setIsLoading(false);
       });
+    } else if (!isLoggedOut && !token) {
+      // First-time visit auto-login for reviewer convenience
+      switchDemoUser('admin@newtonite.io').finally(() => {
+        setIsLoading(false);
+      });
+    } else {
+      // Explicitly logged out: stay on login screen
+      setIsLoading(false);
+      setUser(null);
     }
   }, []);
 
   const login = async (email: string, passwordPlain: string) => {
+    localStorage.removeItem('newtonite_logged_out');
     setIsLoading(true);
     try {
       const res = await apiRequest<{ token: string; user: User }>('/api/auth/login', {
@@ -66,18 +83,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAuthToken(res.token);
       setUser(res.user);
 
-      const teamsRes = await apiRequest<{ teams: Team[] }>('/api/teams');
+      const teamsRes = await apiRequest<{ teams: Team[]; totalWorkspaceUsers?: number }>('/api/teams');
       setTeams(teamsRes.teams);
+      if (teamsRes.totalWorkspaceUsers) {
+        setTotalWorkspaceUsers(teamsRes.totalWorkspaceUsers);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const switchDemoUser = async (email: string) => {
+    localStorage.removeItem('newtonite_logged_out');
     await login(email, 'Password123!');
   };
 
+  const refreshTeams = async () => {
+    try {
+      const teamsRes = await apiRequest<{ teams: Team[]; totalWorkspaceUsers?: number }>('/api/teams');
+      setTeams(teamsRes.teams);
+      if (teamsRes.totalWorkspaceUsers) {
+        setTotalWorkspaceUsers(teamsRes.totalWorkspaceUsers);
+      }
+      const meRes = await apiRequest<{ user: User }>('/api/auth/me');
+      setUser(meRes.user);
+    } catch (err) {
+      console.error('Failed to refresh teams', err);
+    }
+  };
+
   const logout = () => {
+    localStorage.setItem('newtonite_logged_out', 'true');
     setAuthToken(null);
     setUser(null);
     setTeams([]);
@@ -89,12 +125,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         teams,
+        totalWorkspaceUsers,
         selectedTeamId,
         setSelectedTeamId,
         isLoading,
         login,
         switchDemoUser,
         logout,
+        refreshTeams,
       }}
     >
       {children}

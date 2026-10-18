@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, ApiError } from '../api/client';
 import { WorkItem, ActivityEvent, WorkItemPriority, WorkItemStatus } from '../types';
@@ -70,6 +71,16 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
       setActionError(null);
       setIsEditing(false);
       fetchItemAndActivity(itemId);
+      document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
     }
   }, [itemId]);
 
@@ -205,9 +216,17 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
 
   const isClaimable = item?.status === 'OPEN' && !item.assigneeId;
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200/80 rounded-3xl w-full max-w-3xl shadow-billow-modal overflow-hidden flex flex-col max-h-[90vh]">
+  return createPortal(
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[100] bg-slate-950/65 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white border border-slate-200/90 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto transition-all"
+      >
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
@@ -235,7 +254,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
             <div className="flex-1 font-medium">{conflictMessage}</div>
             <button
               onClick={() => fetchItemAndActivity(itemId)}
-              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold shadow-sm transition"
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-xs font-medium shadow-sm transition"
             >
               Reload Latest State
             </button>
@@ -257,11 +276,11 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
             {/* Quick Action Toolbar */}
-            <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+            <div className="p-3.5 bg-slate-50/80 border border-slate-200/80 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center space-x-2 text-xs">
                 <User className="w-4 h-4 text-slate-400" />
                 <span className="text-slate-500 font-medium">Assignee:</span>
-                <span className="font-bold text-slate-800">
+                <span className="font-semibold text-slate-800">
                   {item.assignee ? item.assignee.fullName : 'Unassigned (Open)'}
                 </span>
               </div>
@@ -272,7 +291,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                   <button
                     onClick={handleClaim}
                     disabled={isActionLoading}
-                    className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 transition disabled:opacity-50"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-md text-xs font-medium shadow-sm transition-colors disabled:opacity-50"
                   >
                     <UserCheck className="w-3.5 h-3.5" />
                     <span>Claim Item</span>
@@ -284,7 +303,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                   <button
                     onClick={() => handleTransition('AWAITING_APPROVAL')}
                     disabled={isActionLoading}
-                    className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-md text-xs font-medium shadow-sm transition-colors disabled:opacity-50"
                   >
                     <Clock className="w-3.5 h-3.5" />
                     <span>Submit for Review</span>
@@ -299,13 +318,13 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                       placeholder="Approval note..."
                       value={approvalComment}
                       onChange={(e) => setApprovalComment(e.target.value)}
-                      className="bg-white border border-slate-200 text-xs px-2.5 py-1.5 rounded-xl text-slate-800 focus:outline-none focus:border-amber-500 shadow-sm"
+                      className="bg-white border border-slate-200 text-xs px-2.5 py-1.5 rounded-md text-slate-800 focus:outline-none focus:border-amber-500 shadow-sm"
                     />
                     <button
                       onClick={() => handleTransition('RESOLVED', approvalComment)}
                       disabled={isActionLoading}
                       title="Only Team Leads or Admins can pass this gate"
-                      className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white rounded-md text-xs font-medium shadow-sm transition-colors disabled:opacity-50"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Approve & Resolve (Lead Gate)</span>
@@ -318,7 +337,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                   <button
                     onClick={() => handleTransition('CLOSED')}
                     disabled={isActionLoading}
-                    className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm transition disabled:opacity-50"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 active:bg-slate-950 text-white rounded-md text-xs font-medium shadow-sm transition-colors disabled:opacity-50"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Close Work Item</span>
@@ -328,7 +347,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                 {!isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center space-x-1 px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 shadow-sm transition"
+                    className="flex items-center space-x-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-medium border border-slate-200 shadow-sm transition-colors"
                   >
                     <Edit3 className="w-3.5 h-3.5 text-slate-400" />
                     <span>Edit</span>
@@ -337,24 +356,24 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
               </div>
             </div>
 
-            {/* Billow Segmented Control Navigation Tabs */}
-            <div className="bg-slate-100/90 p-1 rounded-2xl flex space-x-1 text-xs font-semibold shadow-inner">
+            {/* Navigation Tabs (Plane Style) */}
+            <div className="bg-slate-100 p-1 rounded-lg border border-slate-200/80 flex space-x-1 text-xs">
               <button
                 onClick={() => setActiveTab('details')}
-                className={`flex-1 py-2 rounded-xl transition ${
+                className={`flex-1 py-1.5 rounded-md text-xs transition-colors ${
                   activeTab === 'details'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-slate-900 font-semibold shadow-sm border border-slate-200/60'
+                    : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-200/50'
                 }`}
               >
                 Work Item Details
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`flex-1 py-2 rounded-xl flex items-center justify-center space-x-1.5 transition ${
+                className={`flex-1 py-1.5 rounded-md text-xs flex items-center justify-center space-x-1.5 transition-colors ${
                   activeTab === 'history'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-slate-900 font-semibold shadow-sm border border-slate-200/60'
+                    : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-200/50'
                 }`}
               >
                 <History className="w-3.5 h-3.5 text-slate-500" />
@@ -362,10 +381,10 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
               </button>
               <button
                 onClick={() => setActiveTab('comments')}
-                className={`flex-1 py-2 rounded-xl flex items-center justify-center space-x-1.5 transition ${
+                className={`flex-1 py-1.5 rounded-md text-xs flex items-center justify-center space-x-1.5 transition-colors ${
                   activeTab === 'comments'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-slate-900 font-semibold shadow-sm border border-slate-200/60'
+                    : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-200/50'
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
@@ -379,21 +398,21 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                 {isEditing ? (
                   <form onSubmit={handleSaveEdit} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Title</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Title</label>
                       <input
                         type="text"
                         required
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
+                        className="w-full bg-white hover:bg-slate-50/60 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs text-slate-800 transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Priority</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Priority</label>
                       <select
                         value={priority}
                         onChange={(e) => setPriority(e.target.value as WorkItemPriority)}
-                        className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
+                        className="w-full bg-white hover:bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs text-slate-800 transition-colors"
                       >
                         <option value="URGENT">Urgent</option>
                         <option value="HIGH">High</option>
@@ -402,26 +421,26 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Description</label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
                       <textarea
                         rows={4}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition resize-none"
+                        className="w-full bg-white hover:bg-slate-50/60 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-2 text-xs text-slate-800 transition-colors resize-none"
                       />
                     </div>
                     <div className="flex items-center space-x-2 pt-1">
                       <button
                         type="submit"
                         disabled={isActionLoading}
-                        className="px-5 py-2.5 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 transition"
+                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-md text-xs font-medium shadow-sm transition-colors"
                       >
                         {isActionLoading ? 'Saving...' : `Save (OCC v${item.version})`}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsEditing(false)}
-                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
+                        className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded-md text-xs font-medium border border-slate-200 shadow-sm transition-colors"
                       >
                         Cancel
                       </button>
@@ -502,11 +521,11 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
                     placeholder="Add operational notes or post-mortem comment..."
-                    className="flex-1 bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
+                    className="flex-1 bg-white hover:bg-slate-50/60 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs text-slate-800 transition-colors"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2.5 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 flex items-center space-x-1.5 transition"
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-md text-xs font-medium shadow-sm flex items-center space-x-1.5 transition-colors"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Post</span>
@@ -540,6 +559,7 @@ export const WorkItemDetailModal: React.FC<Props> = ({ itemId, onClose, onUpdate
         ) : null}
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

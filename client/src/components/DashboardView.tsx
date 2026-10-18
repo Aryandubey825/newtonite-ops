@@ -25,6 +25,12 @@ export const DashboardView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<DashboardViewType>('all');
   const [items, setItems] = useState<WorkItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [tabCounts, setTabCounts] = useState<{
+    all: number;
+    assigned_to_me: number;
+    unassigned_urgent: number;
+    awaiting_approval: number;
+  } | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +66,9 @@ export const DashboardView: React.FC = () => {
         setItems(res.items);
       }
       setTotalCount(res.totalCount);
+      if (res.tabCounts) {
+        setTabCounts(res.tabCounts);
+      }
       setNextCursor(res.nextCursor);
       setHasMore(res.hasMore);
     } catch (err) {
@@ -85,96 +94,91 @@ export const DashboardView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
       
-      {/* Top Banner / Hero Metric */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/90 shadow-sm mb-2.5">
-            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-            <span>High-Integrity Dispatch Queue</span>
-            <span>•</span>
-            <span className="font-mono">{totalCount} items indexed</span>
-          </div>
+      {/* View Switcher Tabs + Action Button (Plane Style) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-slate-100 p-1 rounded-lg border border-slate-200/80 flex items-center gap-1 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`shrink-0 flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${
+              activeTab === 'all'
+                ? 'bg-white text-slate-900 font-semibold shadow-sm border border-slate-200/60'
+                : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 text-slate-500" />
+            <span>All Items</span>
+            <span className="font-mono text-[11px] text-slate-500">
+              ({tabCounts ? tabCounts.all : totalCount})
+            </span>
+          </button>
 
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            Operations Under Pressure
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
-            Co-transactional work item dispatch with atomic claim locks, monotonic OCC versioning, and server-enforced team RBAC.
-          </p>
+          <button
+            onClick={() => setActiveTab('assigned_to_me')}
+            className={`shrink-0 flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${
+              activeTab === 'assigned_to_me'
+                ? 'bg-white text-slate-900 font-semibold shadow-sm border border-slate-200/60'
+                : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Assigned to Me</span>
+            <span className="font-mono text-[11px] text-slate-500">
+              ({tabCounts ? tabCounts.assigned_to_me : 0})
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('unassigned_urgent')}
+            className={`shrink-0 flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${
+              activeTab === 'unassigned_urgent'
+                ? 'bg-white text-slate-900 font-semibold shadow-sm border border-slate-200/60'
+                : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+          >
+            <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+            <span>Unassigned Urgent</span>
+            <span className="font-mono text-[11px] text-slate-500">
+              ({tabCounts ? tabCounts.unassigned_urgent : 0})
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('awaiting_approval')}
+            className={`shrink-0 flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs transition-colors ${
+              activeTab === 'awaiting_approval'
+                ? 'bg-white text-slate-900 font-semibold shadow-sm border border-slate-200/60'
+                : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
+            <span>Awaiting My Approval</span>
+            <span className="font-mono text-[11px] text-slate-500">
+              ({tabCounts ? tabCounts.awaiting_approval : 0})
+            </span>
+          </button>
         </div>
 
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-billow-glow transition-all"
+          className="shrink-0 inline-flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-md text-xs font-medium shadow-sm transition-colors self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
+          <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
           <span>New Work Item</span>
         </button>
       </div>
 
-      {/* Segmented Pill Tabs (Billow Style) */}
-      <div className="bg-slate-200/60 p-1.5 rounded-2xl flex flex-wrap gap-1 shadow-inner">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'all'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <Layers className="w-4 h-4 text-slate-500" />
-          <span>All Items</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('assigned_to_me')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'assigned_to_me'
-              ? 'bg-white text-indigo-700 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <UserCheck className="w-4 h-4 text-indigo-600" />
-          <span>Assigned to Me</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('unassigned_urgent')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'unassigned_urgent'
-              ? 'bg-white text-rose-700 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <AlertCircle className="w-4 h-4 text-rose-600 animate-pulse" />
-          <span>Unassigned Urgent</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('awaiting_approval')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'awaiting_approval'
-              ? 'bg-white text-amber-800 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-          }`}
-        >
-          <Clock className="w-4 h-4 text-amber-600" />
-          <span>Awaiting My Approval</span>
-        </button>
-      </div>
-
-      {/* Filter and Search Bar (Billow Card) */}
-      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-billow-card flex flex-col md:flex-row gap-3 items-center justify-between">
+      {/* Filter and Search Bar (Plane / Linear Style) */}
+      <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row gap-2.5 items-center justify-between">
         <form onSubmit={handleSearchSubmit} className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search items by title or summary..."
+            placeholder="Search work items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl pl-10 pr-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+            className="w-full bg-white hover:bg-slate-50/60 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none transition-colors"
           />
         </form>
 
@@ -183,7 +187,7 @@ export const DashboardView: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-50 hover:bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
+            className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs px-2.5 py-1.5 rounded-md focus:outline-none focus:border-blue-500 transition-colors cursor-pointer shadow-sm"
           >
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
@@ -197,10 +201,10 @@ export const DashboardView: React.FC = () => {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="bg-slate-50 hover:bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
+            className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs px-2.5 py-1.5 rounded-md focus:outline-none focus:border-blue-500 transition-colors cursor-pointer shadow-sm"
           >
             <option value="">All Priorities</option>
-            <option value="URGENT">🚨 Urgent</option>
+            <option value="URGENT">Urgent</option>
             <option value="HIGH">High</option>
             <option value="MEDIUM">Medium</option>
             <option value="LOW">Low</option>
@@ -210,7 +214,7 @@ export const DashboardView: React.FC = () => {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="bg-slate-50 hover:bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
+            className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs px-2.5 py-1.5 rounded-md focus:outline-none focus:border-blue-500 transition-colors cursor-pointer shadow-sm"
           >
             <option value="">All Types</option>
             <option value="INCIDENT">Incident</option>
@@ -223,9 +227,9 @@ export const DashboardView: React.FC = () => {
       </div>
 
       {/* Items List (Billow Floating Cards Stack) */}
-      <div className="space-y-2.5">
+      <div className={`space-y-2.5 min-h-[520px] transition-opacity duration-150 ${isLoading ? 'opacity-70' : 'opacity-100'}`}>
         {isLoading && items.length === 0 ? (
-          <div className="bg-white rounded-3xl p-16 text-center text-slate-400 text-xs font-semibold flex items-center justify-center space-x-2 border border-slate-200/80 shadow-billow-card">
+          <div className="bg-white rounded-3xl p-16 text-center text-slate-400 text-xs font-semibold flex items-center justify-center space-x-2 border border-slate-200/80 shadow-billow-card min-h-[300px]">
             <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
             <span>Loading telemetry feed...</span>
           </div>
@@ -275,8 +279,8 @@ export const DashboardView: React.FC = () => {
 
               <div className="flex items-center space-x-3">
                 <StatusBadge status={item.status} />
-                <div className="w-7 h-7 rounded-full bg-slate-50 group-hover:bg-blue-50 flex items-center justify-center transition-colors">
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition" />
+                <div className="w-6 h-6 rounded-md group-hover:bg-slate-100 flex items-center justify-center transition-colors">
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition" />
                 </div>
               </div>
             </div>
@@ -289,10 +293,10 @@ export const DashboardView: React.FC = () => {
             <button
               onClick={handleLoadMore}
               disabled={isLoading}
-              className="inline-flex items-center space-x-2 px-7 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-full text-xs shadow-sm hover:shadow active:scale-[0.98] transition-all disabled:opacity-50"
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-md text-xs shadow-sm hover:border-slate-300 active:bg-slate-100 transition-colors disabled:opacity-50"
             >
-              <ArrowDownCircle className={`w-4 h-4 text-blue-600 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>{isLoading ? 'Seeking next cursor...' : 'Load Next Cursor Batch (25+)'}</span>
+              <ArrowDownCircle className={`w-3.5 h-3.5 text-blue-600 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>{isLoading ? 'Seeking next cursor...' : 'Load Next Batch (25+)'}</span>
             </button>
           </div>
         )}

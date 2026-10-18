@@ -27,6 +27,8 @@ export function getAuthToken(): string | null {
   return authToken;
 }
 
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || '').replace(/\/+$/, '');
+
 export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
@@ -47,7 +49,8 @@ export async function apiRequest<T = any>(
     }
   }
 
-  const response = await fetch(endpoint, {
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  const response = await fetch(url, {
     ...options,
     headers,
   });

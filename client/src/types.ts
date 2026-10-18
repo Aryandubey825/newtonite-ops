@@ -24,6 +24,31 @@ export interface Team {
   name: string;
   slug: string;
   description?: string;
+  _count?: {
+    workItems: number;
+    memberships: number;
+  };
+}
+
+export interface TeamMember {
+  id: string;
+  userId: string;
+  teamId: string;
+  role: TeamRole;
+  createdAt: string;
+  user: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface WorkspaceUser {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string;
 }
 
 export interface WorkItem {
@@ -91,4 +116,10 @@ export interface WorkItemListResponse {
   nextCursor: string | null;
   hasMore: boolean;
   totalCount: number;
+  tabCounts?: {
+    all: number;
+    assigned_to_me: number;
+    unassigned_urgent: number;
+    awaiting_approval: number;
+  };
 }

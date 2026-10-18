@@ -1,9 +1,11 @@
-import React from 'react';
-import { AuthProvider } from './context/AuthContext';
+import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
+import { AcceptInviteView } from './components/AcceptInviteView';
+import { LoginView } from './components/LoginView';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Database, ShieldCheck, Cpu } from 'lucide-react';
+import { Database, ShieldCheck, Cpu, RefreshCw } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,6 +17,36 @@ const queryClient = new QueryClient({
 });
 
 const AppContent: React.FC = () => {
+  const { user, isLoading } = useAuth();
+  const [inviteToken, setInviteToken] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+  });
+
+  if (inviteToken) {
+    return (
+      <AcceptInviteView
+        token={inviteToken}
+        onAccepted={() => setInviteToken(null)}
+      />
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen billow-grid-bg flex items-center justify-center">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white/80 backdrop-blur-md px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm">
+          <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+          <span>Loading workspace...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginView />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col billow-grid-bg text-slate-900 antialiased selection:bg-blue-100 selection:text-blue-900">
       <Navbar />

@@ -48,13 +48,16 @@ export async function listWorkItems(query: WorkItemListQuery, user: AuthUser) {
   const where: Prisma.WorkItemWhereInput = {};
 
   // Team scoping
+  const baseTeamWhere: any = {};
   if (query.teamId) {
     if (!isAdmin && !userTeamIds.includes(query.teamId)) {
       throw new ForbiddenError('You do not have access to this team.');
     }
     where.teamId = query.teamId;
+    baseTeamWhere.teamId = query.teamId;
   } else if (!isAdmin) {
     where.teamId = { in: userTeamIds };
+    baseTeamWhere.teamId = { in: userTeamIds };
   }
 
   // View presets
@@ -110,7 +113,11 @@ export async function listWorkItems(query: WorkItemListQuery, user: AuthUser) {
     }
   }
 
-  const [items, totalCount] = await Promise.all([
+  const leadTeamIds = user.memberships
+    .filter((m) => m.role === TeamRole.LEAD || m.role === TeamRole.ADMIN)
+    .map((m) => m.teamId);
+
+  const [items, totalCount, allCount, assignedCount, urgentCount, approvalCount] = await Promise.all([
     prisma.workItem.findMany({
       where,
       take: limit + 1,
@@ -125,6 +132,29 @@ export async function listWorkItems(query: WorkItemListQuery, user: AuthUser) {
       },
     }),
     prisma.workItem.count({ where }),
+    prisma.workItem.count({ where: baseTeamWhere }),
+    prisma.workItem.count({
+      where: {
+        ...baseTeamWhere,
+        assigneeId: user.id,
+        status: { notIn: [WorkItemStatus.CLOSED, WorkItemStatus.CANCELLED] },
+      },
+    }),
+    prisma.workItem.count({
+      where: {
+        ...baseTeamWhere,
+        assigneeId: null,
+        priority: WorkItemPriority.URGENT,
+        status: WorkItemStatus.OPEN,
+      },
+    }),
+    prisma.workItem.count({
+      where: {
+        ...baseTeamWhere,
+        status: WorkItemStatus.AWAITING_APPROVAL,
+        ...(isAdmin ? {} : { teamId: { in: leadTeamIds } }),
+      },
+    }),
   ]);
 
   let nextCursor: string | null = null;
@@ -141,6 +171,12 @@ export async function listWorkItems(query: WorkItemListQuery, user: AuthUser) {
     nextCursor,
     hasMore,
     totalCount,
+    tabCounts: {
+      all: allCount,
+      assigned_to_me: assignedCount,
+      unassigned_urgent: urgentCount,
+      awaiting_approval: approvalCount,
+    },
   };
 }
 

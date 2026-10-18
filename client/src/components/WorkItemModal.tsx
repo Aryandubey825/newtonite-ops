@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { WorkItemPriority, WorkItemType } from '../types';
@@ -20,6 +21,20 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
   const [dueDate, setDueDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -50,9 +65,17 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-      <div className="bg-white border border-slate-200/80 rounded-3xl w-full max-w-xl shadow-billow-modal overflow-hidden">
+  return createPortal(
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[100] bg-slate-950/65 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white border border-slate-200/90 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden my-auto transition-all"
+      >
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -84,12 +107,12 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">Target Team</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Target Team</label>
             <select
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
               required
-              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition"
+              className="w-full bg-white hover:bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs font-medium text-slate-800 transition-colors"
             >
               {teams.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -100,24 +123,24 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">Work Item Title</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Work Item Title</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Gateway Timeout on Settlement API"
-              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 transition"
+              className="w-full bg-white hover:bg-slate-50/60 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 transition-colors"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Type</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Type</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as WorkItemType)}
-                className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 transition"
+                className="w-full bg-white hover:bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs font-medium text-slate-800 transition-colors"
               >
                 <option value="INCIDENT">Incident</option>
                 <option value="CUSTOMER_ISSUE">Customer Issue</option>
@@ -128,13 +151,13 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Priority</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Priority</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as WorkItemPriority)}
-                className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 transition"
+                className="w-full bg-white hover:bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs font-medium text-slate-800 transition-colors"
               >
-                <option value="URGENT">🚨 Urgent</option>
+                <option value="URGENT">Urgent</option>
                 <option value="HIGH">High</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="LOW">Low</option>
@@ -143,7 +166,7 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center space-x-1.5">
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center space-x-1.5">
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
               <span>Target Due Date</span>
             </label>
@@ -151,33 +174,33 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
               type="datetime-local"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 transition"
+              className="w-full bg-white hover:bg-slate-50/60 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-1.5 text-xs text-slate-800 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">Operational Context & Details</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Operational Context & Details</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide background telemetry, logs, or triage details..."
-              className="w-full bg-slate-50 hover:bg-white border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 transition resize-none"
+              className="w-full bg-white hover:bg-slate-50/60 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-md px-3 py-2 text-xs text-slate-800 placeholder-slate-400 transition-colors resize-none"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end space-x-3">
+          <div className="pt-2 flex items-center justify-end space-x-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
+              className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-md border border-slate-200 bg-white hover:bg-slate-50 shadow-sm transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 bg-gradient-to-b from-[#0066ff] to-[#1400ff] hover:brightness-105 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 transition disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-md text-xs font-medium shadow-sm transition-colors disabled:opacity-50"
             >
               {isSubmitting ? 'Dispatching...' : 'Create Item'}
             </button>
@@ -185,6 +208,7 @@ export const WorkItemModal: React.FC<Props> = ({ isOpen, onClose, onCreated }) =
         </form>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
