@@ -87,39 +87,39 @@ export const Navbar: React.FC = () => {
 
           {/* Plane.so Workspace Dropdown Menu */}
           {workspaceDropdownOpen && (
-            <div className="absolute left-0 mt-2 w-[390px] bg-[#1c1d22] border border-white/10 rounded-xl shadow-2xl p-2.5 z-50 text-slate-200 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute left-0 mt-2 w-[380px] bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-50 text-slate-800 animate-in fade-in zoom-in-95 duration-100">
               
-              {/* Active Workspace / Team Card (Matching Image 1) */}
-              <div className="bg-[#262830] border border-white/10 rounded-lg p-3 space-y-3">
+              {/* Active Workspace / Team Card */}
+              <div className="bg-slate-50/80 border border-slate-200/90 rounded-lg p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2.5 truncate">
                     <div className="w-8 h-8 rounded-md bg-[#9d2a6a] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
                       {currentInitial}
                     </div>
                     <div className="truncate">
-                      <div className="text-xs font-bold text-white truncate">
+                      <div className="text-xs font-bold text-slate-900 truncate">
                         {currentWorkspaceName}
                       </div>
-                      <div className="text-[11px] text-slate-400 truncate">
+                      <div className="text-[11px] text-slate-500 truncate">
                         {currentRole} • {currentMemberCount}{' '}
                         {currentMemberCount === 1 ? 'Member' : 'Members'}
                       </div>
                     </div>
                   </div>
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 ml-2" />
                 </div>
 
                 {/* Quick Action Buttons inside Card: Create Team & Invite Members */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/80">
                   <button
                     onClick={() => {
                       setModalTab('teams');
                       setIsTeamModalOpen(true);
                       setWorkspaceDropdownOpen(false);
                     }}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-200 bg-[#1e2025] hover:bg-[#32353f] hover:text-white border border-white/10 rounded-lg transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 hover:text-slate-900 border border-slate-200 rounded-lg transition-all cursor-pointer shadow-2xs whitespace-nowrap"
                   >
-                    <Plus className="w-3.5 h-3.5 text-slate-400" />
+                    <Plus className="w-3.5 h-3.5 text-slate-500" />
                     <span>Create team</span>
                   </button>
 
@@ -130,17 +130,17 @@ export const Navbar: React.FC = () => {
                       setIsTeamModalOpen(true);
                       setWorkspaceDropdownOpen(false);
                     }}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-200 bg-[#1e2025] hover:bg-[#32353f] hover:text-white border border-white/10 rounded-lg transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 hover:text-slate-900 border border-slate-200 rounded-lg transition-all cursor-pointer shadow-2xs whitespace-nowrap"
                   >
-                    <UserPlus className="w-3.5 h-3.5 text-slate-400" />
+                    <UserPlus className="w-3.5 h-3.5 text-slate-500" />
                     <span>Invite members</span>
                   </button>
                 </div>
               </div>
 
               {/* Team Switcher List */}
-              <div className="py-1 space-y-0.5 max-h-48 overflow-y-auto">
-                <div className="px-2 pt-1.5 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="py-1 mt-1 space-y-0.5 max-h-56 overflow-y-auto">
+                <div className="px-2 pt-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Select Team / Workspace
                 </div>
                 <button
@@ -150,19 +150,19 @@ export const Navbar: React.FC = () => {
                   }}
                   className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md flex items-center justify-between transition-colors ${
                     !selectedTeamId
-                      ? 'bg-white/10 text-white font-semibold'
-                      : 'text-slate-300 hover:bg-white/5'
+                      ? 'bg-blue-50 text-blue-900 font-semibold border border-blue-200/60'
+                      : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center space-x-2 truncate">
                     <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                    <span className="truncate">All Teams ({teams.length})</span>
+                    <span className="truncate font-medium">All Teams ({teams.length})</span>
                   </div>
                   <div className="flex items-center space-x-2 shrink-0">
                     <span className="text-[10px] text-slate-400 font-normal">
                       {totalWorkspaceUsers} members
                     </span>
-                    {!selectedTeamId && <Check className="w-3.5 h-3.5 text-blue-400" />}
+                    {!selectedTeamId && <Check className="w-3.5 h-3.5 text-blue-600" />}
                   </div>
                 </button>
 
@@ -178,8 +178,8 @@ export const Navbar: React.FC = () => {
                       }}
                       className={`w-full text-left px-2.5 py-1.5 text-xs rounded-md flex items-center justify-between transition-colors ${
                         isSelected
-                          ? 'bg-white/10 text-white font-semibold'
-                          : 'text-slate-300 hover:bg-white/5'
+                          ? 'bg-purple-50 text-purple-900 font-semibold border border-purple-200/60'
+                          : 'text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center space-x-2 truncate">
@@ -190,25 +190,11 @@ export const Navbar: React.FC = () => {
                         <span className="text-[10px] text-slate-400 font-normal">
                           {memberCount} {memberCount === 1 ? 'member' : 'members'}
                         </span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-purple-400" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-purple-600" />}
                       </div>
                     </button>
                   );
                 })}
-              </div>
-
-              {/* Sign Out Action */}
-              <div className="pt-1.5 border-t border-white/10">
-                <button
-                  onClick={() => {
-                    logout();
-                    setWorkspaceDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-2.5 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4 text-rose-400" />
-                  <span>Sign out</span>
-                </button>
               </div>
 
             </div>
