@@ -971,12 +971,13 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
       : inviteUrl;
 
     // Dispatch real email to Gmail inbox via Vercel serverless function
-    if (body.email && !body.email.endsWith('@newtonite.io')) {
+    const recipientEmail = (body.email || memberUser.email || '').toLowerCase().trim();
+    if (recipientEmail && !recipientEmail.endsWith('@newtonite.io')) {
       fetch('/api/send-invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: body.email,
+          to: recipientEmail,
           fullName: memberUser.fullName,
           teamName: targetTeam?.name || 'Operational Team',
           role: resultMembership.role,

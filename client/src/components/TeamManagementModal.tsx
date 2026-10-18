@@ -61,7 +61,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
   const [isSubmittingTeam, setIsSubmittingTeam] = useState(false);
 
   // Add Member form state
-  const [memberAddMode, setMemberAddMode] = useState<'existing' | 'new'>('existing');
+  const [memberAddMode, setMemberAddMode] = useState<'existing' | 'new'>('new');
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -740,18 +740,18 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                         <div className="flex items-center space-x-2 text-xs font-bold text-blue-900">
                           <Mail className="w-4 h-4 text-blue-600" />
                           <span>
-                            {lastInviteUrl.includes('demo-token')
+                            {lastInviteUrl.includes('demo-')
                               ? 'Gmail Invitation Sent & Link Ready'
                               : 'Invitation Email Dispatched via Outbox Worker'}
                           </span>
                         </div>
                         <span className="text-[10px] font-mono font-medium bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                          {lastInviteUrl.includes('demo-token') ? 'Email Dispatched' : 'Valid for 7 days'}
+                          {lastInviteUrl.includes('demo-') ? 'Email Dispatched' : 'Valid for 7 days'}
                         </span>
                       </div>
 
                       <p className="text-[11px] text-blue-800 leading-relaxed">
-                        {lastInviteUrl.includes('demo-token')
+                        {lastInviteUrl.includes('demo-')
                           ? 'Real Gmail Invitation Dispatched! An invitation email has been sent via Vercel Cloud Serverless to the recipient\'s inbox (check inbox/spam). You can also test immediately with "Open Link" below:'
                           : 'An invitation email has been scheduled and dispatched via Gmail SMTP. The member can also click the link below to set their password and enter the workspace:'}
                       </p>
