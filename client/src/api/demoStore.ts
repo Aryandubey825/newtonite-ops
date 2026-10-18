@@ -164,7 +164,7 @@ export const DEMO_USERS: Record<string, User> = {
   'aryandubey825@gmail.com': {
     id: 'usr-aryan',
     email: 'aryandubey825@gmail.com',
-    fullName: 'Aryan Dubey',
+    fullName: 'Aryan Duve',
     avatarUrl: undefined,
     memberships: [
       { teamId: 'team-secops', teamName: 'SecOps & Incident Response', teamSlug: 'secops', role: 'MEMBER' },
@@ -461,7 +461,7 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   if (pathname === '/api/auth/invite-info' && method === 'GET') {
     const token = searchParams.get('token') || '';
     let email = 'aryandubey825@gmail.com';
-    let fullName = 'Aryan Dubey';
+    let fullName = 'Aryan Duve';
     let role: TeamRole = 'MEMBER';
     let team = { id: 'team-secops', name: 'SecOps & Incident Response', slug: 'secops' };
     let inviterName = 'Alex Mercer (Global Admin)';
@@ -505,7 +505,7 @@ export function handleDemoRequest<T = any>(endpoint: string, options: RequestIni
   if (pathname === '/api/auth/accept-invite' && method === 'POST') {
     const body = options.body ? JSON.parse(options.body as string) : {};
     let email = 'aryandubey825@gmail.com';
-    let fullName = body.fullName || 'Aryan Dubey';
+    let fullName = body.fullName || 'Aryan Duve';
     let role: TeamRole = 'MEMBER';
     let teamId = 'team-secops';
     let teamName = 'SecOps & Incident Response';
