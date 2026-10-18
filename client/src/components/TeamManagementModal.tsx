@@ -234,7 +234,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
         }
         const userName = res.membership?.user?.fullName || fullName || email;
         const userEmail = res.membership?.user?.email || email;
-        setSuccessMsg(`User "${userName}" (${userEmail}) invited! Real Gmail dispatched to ${userEmail} (and copied to your inbox).`);
+        setSuccessMsg(`User "${userName}" (${userEmail}) invited! Real Gmail dispatched to ${userEmail} (and copied to your inbox). Please check Inbox & Spam/Junk folder.`);
         setErrorMsg(null);
         setNewMemberName('');
         setNewMemberEmail('');
@@ -771,8 +771,8 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
                       <p className="text-[11px] text-blue-800 leading-relaxed">
                         {lastInviteUrl.includes('demo-')
-                          ? 'Real Gmail Invitation Dispatched! An invitation email has been sent via Vercel Cloud Serverless to the recipient\'s inbox (check inbox/spam). You can also test immediately with "Open Link" below:'
-                          : 'An invitation email has been scheduled and dispatched via Gmail SMTP. The member can also click the link below to set their password and enter the workspace:'}
+                          ? 'Real Gmail Invitation Dispatched! An invitation email has been sent via Vercel Cloud Serverless to the recipient\'s inbox (please check Inbox and Spam/Junk folder). You can also test immediately with "Open Link" below:'
+                          : 'An invitation email has been scheduled and dispatched via Gmail SMTP (please check Inbox and Spam/Junk folder). The member can also click the link below to set their password and enter the workspace:'}
                       </p>
 
                       <div className="flex items-center gap-2">
